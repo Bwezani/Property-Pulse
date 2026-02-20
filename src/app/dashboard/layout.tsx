@@ -8,23 +8,23 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-card md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Logo />
-          </div>
-          <div className="flex-1">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              <DashboardNav />
-            </nav>
-          </div>
+    <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-card md:flex md:flex-col">
+        <div className="flex h-14 shrink-0 items-center border-b px-4 lg:h-[60px] lg:px-6">
+          <Logo />
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <nav className="grid items-start gap-2 px-2 py-4 text-sm font-medium lg:px-4">
+            <DashboardNav />
+          </nav>
         </div>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col overflow-y-auto">
         <DashboardHeader />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
-          {children}
+        <main className="flex-1 bg-background p-4 lg:p-6">
+          <div className="flex flex-col gap-4 lg:gap-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>
