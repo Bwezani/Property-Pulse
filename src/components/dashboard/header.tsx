@@ -1,4 +1,4 @@
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Menu, Search } from 'lucide-react'
 import { DashboardNav } from './nav'
@@ -16,6 +16,7 @@ export function DashboardHeader() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="sm:max-w-xs">
+          <SheetTitle className="sr-only">Menu</SheetTitle>
           <nav className="grid gap-6 text-lg font-medium">
             <Logo />
             <DashboardNav isMobile />
