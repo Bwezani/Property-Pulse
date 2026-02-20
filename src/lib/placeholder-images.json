@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "prop-1-img",
+      "description": "Modern suburban house with a green lawn",
+      "imageUrl": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtb2Rlcm4lMjBob3VzZXxlbnwwfHx8fDE3NzE1NDEzOTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern house"
+    },
+    {
+      "id": "prop-2-img",
+      "description": "A multi-story building under construction with cranes",
+      "imageUrl": "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxidWlsZGluZyUyMGNvbnN0cnVjdGlvbnxlbnwwfHx8fDE3NzE1MzQ0Njh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "building construction"
+    },
+    {
+      "id": "prop-3-img",
+      "description": "A sleek, modern office building in a business district",
+      "imageUrl": "https://images.unsplash.com/photo-1600531529272-023c4b821f14?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvZmZpY2UlMjBidWlsZGluZ3xlbnwwfHx8fDE3NzE1MDY0MDF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "office building"
+    },
+    {
+      "id": "prop-4-img",
+      "description": "A retail storefront under construction near a body of water",
+      "imageUrl": "https://images.unsplash.com/photo-1758958370245-fe5e897fc437?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxyZXRhaWwlMjBjb25zdHJ1Y3Rpb258ZW58MHx8fHwxNzcxNTgzMDI1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "retail construction"
+    },
+    {
+      "id": "prop-5-img",
+      "description": "A charming house on a hill with a view",
+      "imageUrl": "https://images.unsplash.com/photo-1713526695004-52a5ea5317ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxoaWxsdG9wJTIwaG91c2V8ZW58MHx8fHwxNzcxNTgzMDI0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hilltop house"
+    },
+    {
+      "id": "default-img",
+      "description": "A generic building exterior",
+      "imageUrl": "https://images.unsplash.com/photo-1707376064132-ad067e6f5221?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxidWlsZGluZyUyMGV4dGVyaW9yfGVufDB8fHx8MTc3MTU4MTA2MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "building exterior"
+    }
+  ]
 }
