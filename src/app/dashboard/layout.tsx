@@ -19,9 +19,9 @@ export default function DashboardLayout({
           </nav>
         </div>
       </div>
-      <div className="flex flex-col overflow-y-auto">
+      <div className="flex flex-col">
         <DashboardHeader />
-        <main className="flex-1 bg-background p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto bg-background p-4 lg:p-6">
           <div className="flex flex-col gap-4 lg:gap-6">
             {children}
           </div>
