@@ -96,7 +96,7 @@ export default async function PropertyDetailPage({
       <Icon className="h-5 w-5 text-muted-foreground mt-1" />
       <div>
         <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="font-medium">{value}</p>
+        <div className="font-medium">{value}</div>
       </div>
     </div>
   );
