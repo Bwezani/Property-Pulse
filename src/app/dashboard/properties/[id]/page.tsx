@@ -6,6 +6,9 @@ import {
   getAllRentalIncomes,
   getAllMaintenanceExpenses,
   getCategories,
+  getConstructionExpenses,
+  getRentalIncomes,
+  getMaintenanceExpenses,
 } from '@/lib/data';
 import { calculatePropertyFinancials } from '@/lib/financials';
 import { PlaceHolderImagesMap } from '@/lib/placeholder-images';
@@ -32,6 +35,10 @@ import {
 } from 'lucide-react';
 import { InvestmentProgress } from '@/components/properties/investment-progress';
 import { CostOverrunAlert } from '@/components/expenses/cost-overrun-alert';
+import { TransactionsDataTable } from '@/components/transactions/data-table';
+import { constructionColumns } from '@/components/expenses/construction/columns';
+import { rentalIncomeColumns } from '@/components/income/rental/columns';
+import { maintenanceColumns } from '@/components/expenses/maintenance/columns';
 
 export default async function PropertyDetailPage({
   params,
@@ -44,22 +51,28 @@ export default async function PropertyDetailPage({
   }
 
   const [
-    constructionExpenses,
-    rentalIncomes,
-    maintenanceExpenses,
+    allConstructionExpenses,
+    allRentalIncomes,
+    allMaintenanceExpenses,
     categories,
+    propertyConstructionExpenses,
+    propertyRentalIncomes,
+    propertyMaintenanceExpenses,
   ] = await Promise.all([
     getAllConstructionExpenses(),
     getAllRentalIncomes(),
     getAllMaintenanceExpenses(),
     getCategories(),
+    getConstructionExpenses(params.id),
+    getRentalIncomes(params.id),
+    getMaintenanceExpenses(params.id),
   ]);
 
   const property = calculatePropertyFinancials(
     propertyData,
-    constructionExpenses,
-    rentalIncomes,
-    maintenanceExpenses
+    allConstructionExpenses,
+    allRentalIncomes,
+    allMaintenanceExpenses
   );
   
   const category = categories.find((c) => c.id === property.categoryId)?.name;
@@ -168,7 +181,7 @@ export default async function PropertyDetailPage({
         </div>
       </div>
 
-       <Tabs defaultValue="overview">
+       <Tabs defaultValue={property.type === 'Under Construction' ? 'construction' : 'income'}>
         <TabsList>
           {property.type === 'Under Construction' && <TabsTrigger value="construction">Construction Expenses</TabsTrigger>}
           {property.type === 'Finished' && <TabsTrigger value="income">Rental Income</TabsTrigger>}
@@ -178,7 +191,7 @@ export default async function PropertyDetailPage({
            <Card>
                 <CardHeader><CardTitle>Construction Expenses</CardTitle></CardHeader>
                 <CardContent>
-                    <p>Construction expense table will be shown here.</p>
+                    <TransactionsDataTable columns={constructionColumns} data={propertyConstructionExpenses} />
                 </CardContent>
             </Card>
         </TabsContent>
@@ -186,7 +199,7 @@ export default async function PropertyDetailPage({
            <Card>
                 <CardHeader><CardTitle>Rental Income</CardTitle></CardHeader>
                 <CardContent>
-                    <p>Rental income table will be shown here.</p>
+                    <TransactionsDataTable columns={rentalIncomeColumns} data={propertyRentalIncomes} />
                 </CardContent>
             </Card>
         </TabsContent>
@@ -194,7 +207,7 @@ export default async function PropertyDetailPage({
            <Card>
                 <CardHeader><CardTitle>Maintenance Expenses</CardTitle></CardHeader>
                 <CardContent>
-                    <p>Maintenance expense table will be shown here.</p>
+                    <TransactionsDataTable columns={maintenanceColumns} data={propertyMaintenanceExpenses} />
                 </CardContent>
             </Card>
         </TabsContent>
