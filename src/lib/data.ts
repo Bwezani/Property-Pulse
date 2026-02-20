@@ -230,6 +230,12 @@ export const addConstructionExpense = async (expense: Omit<ConstructionExpense, 
     return newExpense;
 }
 
+export const addMaintenanceExpense = async (expense: Omit<MaintenanceExpense, 'id'>) => {
+    const newExpense = { ...expense, id: `mex-${Date.now()}` };
+    maintenanceExpenses.push(newExpense);
+    return newExpense;
+}
+
 export const updatePropertyCostOverrunAlert = async (propertyId: string, reason: string) => {
     properties = properties.map(p => p.id === propertyId ? { ...p, costOverrunAlert: reason } : p);
     return true;

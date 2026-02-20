@@ -43,6 +43,8 @@ import { constructionColumns } from '@/components/expenses/construction/columns'
 import { rentalIncomeColumns } from '@/components/income/rental/columns';
 import { maintenanceColumns } from '@/components/expenses/maintenance/columns';
 import { KpiCard } from '@/components/dashboard/kpi-card';
+import { AddConstructionExpenseForm } from '@/components/expenses/construction/add-form';
+import { AddMaintenanceExpenseForm } from '@/components/expenses/maintenance/add-form';
 
 export default async function PropertyDetailPage({
   params,
@@ -367,8 +369,9 @@ export default async function PropertyDetailPage({
         </TabsList>
         <TabsContent value="construction">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Construction Expenses</CardTitle>
+              <AddConstructionExpenseForm propertyId={property.id} />
             </CardHeader>
             <CardContent>
               <TransactionsDataTable
@@ -393,8 +396,9 @@ export default async function PropertyDetailPage({
         </TabsContent>
         <TabsContent value="maintenance">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Maintenance Expenses</CardTitle>
+              <AddMaintenanceExpenseForm propertyId={property.id} />
             </CardHeader>
             <CardContent>
               <TransactionsDataTable
