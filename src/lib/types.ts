@@ -72,3 +72,19 @@ export type MaintenanceExpense = {
   date: string; // ISO date string
   vendor: string;
 };
+
+export type ConstructionBudgetItem = {
+  id: string;
+  propertyId: string;
+  itemName: string;
+  estimatedCost: number;
+  actualCost: number;
+};
+
+export type MaintenanceBudgetItem = {
+  id: string;
+  propertyId: string;
+  itemName: string;
+  estimatedCost: number;
+  actualCost: number;
+};

@@ -8,6 +8,8 @@ import {
   getConstructionExpenses,
   getRentalIncomes,
   getMaintenanceExpenses,
+  getConstructionBudgetItems,
+  getMaintenanceBudgetItems,
 } from '@/lib/data';
 import { calculatePropertyFinancials } from '@/lib/financials';
 import {
@@ -45,6 +47,10 @@ import { maintenanceColumns } from '@/components/expenses/maintenance/columns';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { AddConstructionExpenseForm } from '@/components/expenses/construction/add-form';
 import { AddMaintenanceExpenseForm } from '@/components/expenses/maintenance/add-form';
+import { constructionBudgetColumns } from '@/components/expenses/construction/budget-columns';
+import { maintenanceBudgetColumns } from '@/components/expenses/maintenance/budget-columns';
+import { AddConstructionBudgetItemForm } from '@/components/expenses/construction/add-budget-form';
+import { AddMaintenanceBudgetItemForm } from '@/components/expenses/maintenance/add-budget-form';
 
 export default async function PropertyDetailPage({
   params,
@@ -64,6 +70,8 @@ export default async function PropertyDetailPage({
     propertyConstructionExpenses,
     propertyRentalIncomes,
     propertyMaintenanceExpenses,
+    propertyConstructionBudgetItems,
+    propertyMaintenanceBudgetItems,
   ] = await Promise.all([
     getAllConstructionExpenses(),
     getAllRentalIncomes(),
@@ -72,6 +80,8 @@ export default async function PropertyDetailPage({
     getConstructionExpenses(params.id),
     getRentalIncomes(params.id),
     getMaintenanceExpenses(params.id),
+    getConstructionBudgetItems(params.id),
+    getMaintenanceBudgetItems(params.id),
   ]);
 
   const property = calculatePropertyFinancials(
@@ -147,7 +157,7 @@ export default async function PropertyDetailPage({
                   title="Net Profit"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'ZMW',
                     maximumFractionDigits: 0,
                   }).format(property.netProfit)}
                   helperText={
@@ -185,7 +195,7 @@ export default async function PropertyDetailPage({
                   title="Total Rent Received"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'ZMW',
                     maximumFractionDigits: 0,
                   }).format(property.totalRentReceived)}
                   helperText="Lifetime gross rental income"
@@ -198,7 +208,7 @@ export default async function PropertyDetailPage({
                   title="Total Spent"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'ZMW',
                     maximumFractionDigits: 0,
                   }).format(property.totalConstructionCost)}
                   helperText="On construction to date"
@@ -217,7 +227,7 @@ export default async function PropertyDetailPage({
                   }
                   helperText={`Budget: ${new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'ZMW',
                     maximumFractionDigits: 0,
                   }).format(property.estimatedBudget || 0)}`}
                   Icon={GanttChartSquare}
@@ -263,7 +273,7 @@ export default async function PropertyDetailPage({
                     label="Monthly Rent"
                     value={new Intl.NumberFormat('en-US', {
                       style: 'currency',
-                      currency: 'USD',
+                      currency: 'ZMW',
                     }).format(property.monthlyRent)}
                   />
                 </>
@@ -279,7 +289,7 @@ export default async function PropertyDetailPage({
                     label="Estimated Budget"
                     value={new Intl.NumberFormat('en-US', {
                       style: 'currency',
-                      currency: 'USD',
+                      currency: 'ZMW',
                     }).format(property.estimatedBudget || 0)}
                   />
                 </>
@@ -317,28 +327,28 @@ export default async function PropertyDetailPage({
                   }
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'ZMW',
                   }).format(property.totalInvestment)}
                 />
                 <FinancialItem
                   label="Total Rent Received"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'ZMW',
                   }).format(property.totalRentReceived)}
                 />
                 <FinancialItem
                   label="Maintenance Costs"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'ZMW',
                   }).format(property.totalMaintenanceCost)}
                 />
                 <FinancialItem
                   label="Net Profit"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'ZMW',
                   }).format(property.netProfit)}
                   isPositive={property.netProfit >= 0}
                 />
@@ -364,22 +374,100 @@ export default async function PropertyDetailPage({
             <TabsTrigger value="income">Rental Income</TabsTrigger>
           )}
           {property.type === 'Finished' && (
-            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+            <TabsTrigger value="maintenance">Expenses</TabsTrigger>
           )}
         </TabsList>
         <TabsContent value="construction">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Construction Expenses</CardTitle>
-              <AddConstructionExpenseForm propertyId={property.id} />
-            </CardHeader>
-            <CardContent>
-              <TransactionsDataTable
-                columns={constructionColumns}
-                data={propertyConstructionExpenses}
-              />
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Construction Expenses</CardTitle>
+                <AddConstructionExpenseForm propertyId={property.id} />
+              </CardHeader>
+              <CardContent>
+                <TransactionsDataTable
+                  columns={constructionColumns}
+                  data={propertyConstructionExpenses}
+                />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Construction Budget vs Actual</CardTitle>
+                  <CardDescription>
+                    Plan your construction items and compare estimated costs with actual spending.
+                  </CardDescription>
+                </div>
+                <AddConstructionBudgetItemForm propertyId={property.id} />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <TransactionsDataTable
+                  columns={constructionBudgetColumns}
+                  data={propertyConstructionBudgetItems}
+                />
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <div>
+                    Estimated Total:{' '}
+                    <span className="font-medium text-foreground">
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'ZMW',
+                        maximumFractionDigits: 0,
+                      }).format(
+                        propertyConstructionBudgetItems.reduce(
+                          (sum, item) => sum + item.estimatedCost,
+                          0
+                        )
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    Actual Total:{' '}
+                    <span className="font-medium text-foreground">
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'ZMW',
+                        maximumFractionDigits: 0,
+                      }).format(
+                        propertyConstructionBudgetItems.reduce(
+                          (sum, item) => sum + item.actualCost,
+                          0
+                        )
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    Difference:{' '}
+                    <span className="font-medium text-foreground">
+                      {(() => {
+                        const estimated = propertyConstructionBudgetItems.reduce(
+                          (sum, item) => sum + item.estimatedCost,
+                          0
+                        );
+                        const actual = propertyConstructionBudgetItems.reduce(
+                          (sum, item) => sum + item.actualCost,
+                          0
+                        );
+                        const diff = actual - estimated;
+                        const label =
+                          diff > 0
+                            ? 'Over Budget'
+                            : diff < 0
+                            ? 'Under Budget'
+                            : 'On Budget';
+                        return `${label} (${new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'ZMW',
+                          maximumFractionDigits: 0,
+                        }).format(diff)})`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         <TabsContent value="income">
           <Card>
@@ -395,18 +483,96 @@ export default async function PropertyDetailPage({
           </Card>
         </TabsContent>
         <TabsContent value="maintenance">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Maintenance Expenses</CardTitle>
-              <AddMaintenanceExpenseForm propertyId={property.id} />
-            </CardHeader>
-            <CardContent>
-              <TransactionsDataTable
-                columns={maintenanceColumns}
-                data={propertyMaintenanceExpenses}
-              />
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Expenses</CardTitle>
+                <AddMaintenanceExpenseForm propertyId={property.id} />
+              </CardHeader>
+              <CardContent>
+                <TransactionsDataTable
+                  columns={maintenanceColumns}
+                  data={propertyMaintenanceExpenses}
+                />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Budget vs Actual</CardTitle>
+                  <CardDescription>
+                    Plan any property-related items (repairs, improvements, decor) and track if you stayed within budget.
+                  </CardDescription>
+                </div>
+                <AddMaintenanceBudgetItemForm propertyId={property.id} />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <TransactionsDataTable
+                  columns={maintenanceBudgetColumns}
+                  data={propertyMaintenanceBudgetItems}
+                />
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <div>
+                    Estimated Total:{' '}
+                    <span className="font-medium text-foreground">
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'ZMW',
+                        maximumFractionDigits: 0,
+                      }).format(
+                        propertyMaintenanceBudgetItems.reduce(
+                          (sum, item) => sum + item.estimatedCost,
+                          0
+                        )
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    Actual Total:{' '}
+                    <span className="font-medium text-foreground">
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'ZMW',
+                        maximumFractionDigits: 0,
+                      }).format(
+                        propertyMaintenanceBudgetItems.reduce(
+                          (sum, item) => sum + item.actualCost,
+                          0
+                        )
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    Difference:{' '}
+                    <span className="font-medium text-foreground">
+                      {(() => {
+                        const estimated = propertyMaintenanceBudgetItems.reduce(
+                          (sum, item) => sum + item.estimatedCost,
+                          0
+                        );
+                        const actual = propertyMaintenanceBudgetItems.reduce(
+                          (sum, item) => sum + item.actualCost,
+                          0
+                        );
+                        const diff = actual - estimated;
+                        const label =
+                          diff > 0
+                            ? 'Over Budget'
+                            : diff < 0
+                            ? 'Under Budget'
+                            : 'On Budget';
+                        return `${label} (${new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'ZMW',
+                          maximumFractionDigits: 0,
+                        }).format(diff)})`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

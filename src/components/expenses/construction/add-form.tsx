@@ -144,7 +144,7 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
                 />
             </div>
              <div>
-                <p className="text-sm text-muted-foreground">Total Price: <span className="font-bold text-foreground">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalPrice)}</span></p>
+                <p className="text-sm text-muted-foreground">Total Price: <span className="font-bold text-foreground">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(totalPrice)}</span></p>
              </div>
             <FormField
               control={form.control}

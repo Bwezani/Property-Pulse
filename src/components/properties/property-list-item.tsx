@@ -50,8 +50,8 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
              <InvestmentProgress totalInvestment={property.totalInvestment} rentReceived={property.totalRentReceived} />
         ) : (
             <div className='text-sm text-muted-foreground'>
-                <p>Budget: <span className='font-medium text-foreground'>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(property.estimatedBudget || 0)}</span></p>
-                <p>Spent: <span className='font-medium text-foreground'>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(property.totalConstructionCost || 0)}</span></p>
+                <p>Budget: <span className='font-medium text-foreground'>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(property.estimatedBudget || 0)}</span></p>
+                <p>Spent: <span className='font-medium text-foreground'>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(property.totalConstructionCost || 0)}</span></p>
             </div>
         )}
       </CardContent>

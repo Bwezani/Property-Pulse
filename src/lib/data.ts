@@ -4,6 +4,8 @@ import type {
   ConstructionExpense,
   RentalIncome,
   MaintenanceExpense,
+  ConstructionBudgetItem,
+  MaintenanceBudgetItem,
 } from './types';
 import { PlaceHolderImagesMap } from './placeholder-images';
 
@@ -189,6 +191,9 @@ let maintenanceExpenses: MaintenanceExpense[] = [
   { id: 'mex-3', propertyId: 'prop-3', expenseType: 'Repair', description: 'Unexpected repair on HVAC system', amount: 1200, date: '2024-02-15T00:00:00Z', vendor: 'Cooling Systems Inc' },
 ];
 
+let constructionBudgetItems: ConstructionBudgetItem[] = [];
+let maintenanceBudgetItems: MaintenanceBudgetItem[] = [];
+
 // --- Data Access Functions ---
 
 export const getProperties = async () => properties.filter(p => !p.isDeleted);
@@ -201,6 +206,12 @@ export const getMaintenanceExpenses = async (propertyId: string) => maintenanceE
 export const getAllConstructionExpenses = async () => constructionExpenses;
 export const getAllRentalIncomes = async () => rentalIncomes;
 export const getAllMaintenanceExpenses = async () => maintenanceExpenses;
+
+export const getConstructionBudgetItems = async (propertyId: string) =>
+  constructionBudgetItems.filter((b) => b.propertyId === propertyId);
+
+export const getMaintenanceBudgetItems = async (propertyId: string) =>
+  maintenanceBudgetItems.filter((b) => b.propertyId === propertyId);
 
 
 export const addProperty = async (property: Omit<Property, 'id' | 'isDeleted' | 'createdAt'>) => {
@@ -240,3 +251,67 @@ export const updatePropertyCostOverrunAlert = async (propertyId: string, reason:
     properties = properties.map(p => p.id === propertyId ? { ...p, costOverrunAlert: reason } : p);
     return true;
 }
+
+export const addConstructionBudgetItem = async (
+  item: Omit<ConstructionBudgetItem, 'id'>
+) => {
+  const newItem: ConstructionBudgetItem = {
+    ...item,
+    id: `cb-${Date.now()}`,
+    actualCost: item.actualCost ?? 0,
+  };
+  constructionBudgetItems.push(newItem);
+  return newItem;
+};
+
+export const addMaintenanceBudgetItem = async (
+  item: Omit<MaintenanceBudgetItem, 'id'>
+) => {
+  const newItem: MaintenanceBudgetItem = {
+    ...item,
+    id: `mb-${Date.now()}`,
+    actualCost: item.actualCost ?? 0,
+  };
+  maintenanceBudgetItems.push(newItem);
+  return newItem;
+};
+
+export const updateConstructionBudgetItem = async (
+  id: string,
+  updates: Partial<ConstructionBudgetItem>
+) => {
+  constructionBudgetItems = constructionBudgetItems.map((item) =>
+    item.id === id ? { ...item, ...updates } : item
+  );
+  return constructionBudgetItems.find((item) => item.id === id);
+};
+
+export const updateMaintenanceBudgetItem = async (
+  id: string,
+  updates: Partial<MaintenanceBudgetItem>
+) => {
+  maintenanceBudgetItems = maintenanceBudgetItems.map((item) =>
+    item.id === id ? { ...item, ...updates } : item
+  );
+  return maintenanceBudgetItems.find((item) => item.id === id);
+};
+
+export const deleteConstructionExpense = async (id: string) => {
+  constructionExpenses = constructionExpenses.filter((e) => e.id !== id);
+  return true;
+};
+
+export const deleteMaintenanceExpense = async (id: string) => {
+  maintenanceExpenses = maintenanceExpenses.filter((e) => e.id !== id);
+  return true;
+};
+
+export const deleteConstructionBudgetItem = async (id: string) => {
+  constructionBudgetItems = constructionBudgetItems.filter((b) => b.id !== id);
+  return true;
+};
+
+export const deleteMaintenanceBudgetItem = async (id: string) => {
+  maintenanceBudgetItems = maintenanceBudgetItems.filter((b) => b.id !== id);
+  return true;
+};

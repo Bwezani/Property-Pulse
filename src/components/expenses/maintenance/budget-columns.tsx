@@ -1,24 +1,22 @@
 'use client';
+
 import type { ColumnDef } from '@tanstack/react-table';
-import type { ConstructionExpense } from '@/lib/types';
+import type { MaintenanceBudgetItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { deleteConstructionExpenseAction } from '../actions';
+import { UpdateMaintenanceBudgetActualForm } from './update-actual-form';
+import { deleteMaintenanceBudgetItemAction } from '../actions';
 
-export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
+export const maintenanceBudgetColumns: ColumnDef<MaintenanceBudgetItem>[] = [
   {
     accessorKey: 'itemName',
     header: 'Item',
   },
   {
-    accessorKey: 'quantity',
-    header: 'Quantity',
-  },
-  {
-    accessorKey: 'unitPrice',
-    header: 'Unit Price',
+    accessorKey: 'estimatedCost',
+    header: 'Estimated Cost',
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue('unitPrice'));
+      const amount = parseFloat(row.getValue('estimatedCost'));
       const formatted = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'ZMW',
@@ -27,49 +25,48 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     },
   },
   {
-    accessorKey: 'totalPrice',
-    header: 'Total Price',
+    accessorKey: 'actualCost',
+    header: 'Actual Cost',
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue('totalPrice'));
+      const value = row.getValue('actualCost');
+      const amount = typeof value === 'number' ? value : parseFloat(String(value));
+      if (!amount) {
+        return <span className="text-xs text-muted-foreground">Not set</span>;
+      }
       const formatted = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'ZMW',
       }).format(amount);
       return <div className="font-medium">{formatted}</div>;
     },
-  },
-  {
-    accessorKey: 'vendor',
-    header: 'Vendor',
-  },
-  {
-    accessorKey: 'purchaseDate',
-    header: 'Date',
-    cell: ({ row }) => new Date(row.getValue('purchaseDate')).toLocaleDateString(),
   },
   {
     id: 'actions',
     header: '',
     cell: ({ row }) => {
-      const expense = row.original;
+      const item = row.original;
       const handleDelete = async () => {
         try {
-          await deleteConstructionExpenseAction(expense.propertyId, expense.id);
+          await deleteMaintenanceBudgetItemAction(item.propertyId, item.id);
           toast({
-            title: 'Expense Deleted',
-            description: `"${expense.itemName}" has been removed.`,
+            title: 'Item Deleted',
+            description: `"${item.itemName}" has been removed from the budget.`,
           });
         } catch (error) {
           toast({
             variant: 'destructive',
             title: 'Error',
-            description: 'Could not delete the expense.',
+            description: 'Could not delete the budget item.',
           });
         }
       };
 
       return (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <UpdateMaintenanceBudgetActualForm
+            propertyId={item.propertyId}
+            item={item}
+          />
           <Button
             variant="ghost"
             size="xs"
@@ -83,3 +80,4 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     },
   },
 ];
+

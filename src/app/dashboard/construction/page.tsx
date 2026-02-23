@@ -1,5 +1,6 @@
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
+import { AddConstructionPropertyForm } from '@/components/properties/add-construction-property-form';
 import {
   getProperties,
   getAllConstructionExpenses,
@@ -41,7 +42,12 @@ export default async function ConstructionDashboardPage() {
 
   return (
     <div className="flex-1 space-y-4">
-      <h1 className="text-3xl font-headline font-bold">Construction Dashboard</h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-3xl font-headline font-bold">
+          Construction Dashboard
+        </h1>
+        <AddConstructionPropertyForm />
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <KpiCard
           title="Active Projects"
@@ -53,7 +59,7 @@ export default async function ConstructionDashboardPage() {
           title="Total Spent"
           value={new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'USD',
+            currency: 'ZMW',
             maximumFractionDigits: 0,
           }).format(totalConstructionCost)}
           helperText="Sum of all construction expenses"

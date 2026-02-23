@@ -15,7 +15,7 @@ import { MoreHorizontal, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Property } from '@/lib/types';
 import { PlaceHolderImagesMap } from '@/lib/placeholder-images';
-import { finishConstructionAction } from './actions';
+import { finishConstructionAction, deletePropertyAction } from './actions';
 import { toast } from '@/hooks/use-toast';
 
 const StatusBadge = ({ status }: { status: 'Occupied' | 'Vacant' }) => {
@@ -50,6 +50,21 @@ async function handleFinishConstruction(property: Property) {
     }
 }
 
+async function handleDeleteProperty(property: Property) {
+  try {
+    await deletePropertyAction(property.id);
+    toast({
+      title: 'Property Deleted',
+      description: `${property.name} has been removed.`,
+    });
+  } catch (error) {
+    toast({
+      variant: 'destructive',
+      title: 'Error',
+      description: 'Could not delete the property.',
+    });
+  }
+}
 
 export const columns: ColumnDef<Property>[] = [
   {
@@ -108,7 +123,7 @@ export const columns: ColumnDef<Property>[] = [
       const amount = parseFloat(row.getValue('totalInvestment'));
       const formatted = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'ZMW',
       }).format(amount);
 
       return <div className="font-medium">{formatted}</div>;
@@ -121,7 +136,7 @@ export const columns: ColumnDef<Property>[] = [
        const amount = parseFloat(row.getValue('netProfit'));
       const formatted = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'ZMW',
       }).format(amount);
       const isProfit = amount >= 0;
 
@@ -153,7 +168,10 @@ export const columns: ColumnDef<Property>[] = [
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => handleDeleteProperty(property)}
+            >
               Delete Property
             </DropdownMenuItem>
           </DropdownMenuContent>

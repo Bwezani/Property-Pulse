@@ -1,5 +1,6 @@
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
+import { AddFinishedPropertyForm } from '@/components/properties/add-finished-property-form';
 import {
   getProperties,
   getAllConstructionExpenses,
@@ -47,9 +48,12 @@ export default async function FinishedPropertiesDashboardPage() {
 
   return (
     <div className="flex-1 space-y-4">
-      <h1 className="text-3xl font-headline font-bold">
-        Finished Properties Dashboard
-      </h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-3xl font-headline font-bold">
+          Finished Properties Dashboard
+        </h1>
+        <AddFinishedPropertyForm />
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           title="Total Properties"
@@ -63,7 +67,7 @@ export default async function FinishedPropertiesDashboardPage() {
           title="Total Profit Earned"
           value={new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'USD',
+            currency: 'ZMW',
             maximumFractionDigits: 0,
           }).format(totalProfit)}
           helperText="Across all properties"
@@ -73,7 +77,7 @@ export default async function FinishedPropertiesDashboardPage() {
           title="Remaining Investment"
           value={new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'USD',
+            currency: 'ZMW',
             maximumFractionDigits: 0,
           }).format(totalRemainingInvestment)}
           helperText="To break even on all properties"
@@ -83,7 +87,7 @@ export default async function FinishedPropertiesDashboardPage() {
           title="Monthly Rental Income"
           value={new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'USD',
+            currency: 'ZMW',
             maximumFractionDigits: 0,
           }).format(monthlyRentalIncome)}
           helperText="From occupied properties"

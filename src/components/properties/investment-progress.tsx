@@ -27,15 +27,15 @@ export function InvestmentProgress({ totalInvestment, rentReceived }: Investment
         </span>
         <span className="font-bold">
             {isProfit 
-             ? `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(profitAmount)}`
+             ? `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(profitAmount)}`
              : `${Math.min(100, progress).toFixed(0)}%`
             }
         </span>
       </div>
       <Progress value={isProfit ? 100 : progress} className="h-2 [&>div]:" indicatorClassName={colorClass} />
       <div className="flex justify-between text-xs mt-1 text-muted-foreground">
-        <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits:0 }).format(rentReceived)}</span>
-        <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits:0 }).format(totalInvestment)}</span>
+        <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits:0 }).format(rentReceived)}</span>
+        <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits:0 }).format(totalInvestment)}</span>
       </div>
     </div>
   );
