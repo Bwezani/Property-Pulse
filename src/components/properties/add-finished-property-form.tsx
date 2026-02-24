@@ -136,7 +136,7 @@ export function AddFinishedPropertyForm() {
           Add Finished Property
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Finished Property</DialogTitle>
           <DialogDescription>

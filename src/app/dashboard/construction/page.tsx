@@ -10,7 +10,9 @@ import {
 import { calculatePropertyFinancials } from '@/lib/financials';
 import { Construction, Banknote, GanttChartSquare } from 'lucide-react';
 import type { Property } from '@/lib/types';
-
+import { ImportUnderConstructionProperties } from '@/components/properties/import-under-construction-properties';
+import { AddConstructionPropertyWrapper } from '@/components/properties/add-construction-property-wrapper';
+import { ConstructionExpenseBarChart } from '../reports/construction-expense-bar-chart';
 export default async function ConstructionDashboardPage() {
   const propertiesData = await getProperties();
   const constructionExpenses = await getAllConstructionExpenses();
@@ -40,14 +42,29 @@ export default async function ConstructionDashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  const expenseSummary = [
+    { category: 'Labour', amount: 120000 },
+    { category: 'Materials', amount: 200000 },
+    { category: 'Transport', amount: 30000 },
+    { category: 'Permits', amount: 15000 },
+  ];
+
   return (
     <div className="flex-1 space-y-4">
+  
+      {/* HEADER */}
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-3xl font-headline font-bold">
           Construction Dashboard
         </h1>
-        <AddConstructionPropertyForm />
+  
+        <div className="flex gap-2">
+          <ImportUnderConstructionProperties />
+          <AddConstructionPropertyWrapper />
+        </div>
       </div>
+  
+      {/* KPI SECTION */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <KpiCard
           title="Active Projects"
@@ -76,10 +93,16 @@ export default async function ConstructionDashboardPage() {
           Icon={GanttChartSquare}
         />
       </div>
+
+      {/* EXPENSE CHART */}
+<ConstructionExpenseBarChart data={expenseSummary} />
+  
+      {/* PROJECT LIST */}
       <div>
         <h2 className="text-2xl font-headline font-semibold my-4">
           Current Projects
         </h2>
+  
         {constructionProperties.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {constructionProperties.map((property) => (
@@ -94,6 +117,7 @@ export default async function ConstructionDashboardPage() {
           </div>
         )}
       </div>
+  
     </div>
   );
 }
