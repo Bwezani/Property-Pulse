@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type React from 'react';
 import {
   getPropertyById,
   getAllConstructionExpenses,
@@ -27,10 +28,8 @@ import {
   DollarSign,
   FileText,
   GanttChartSquare,
-  MapPin,
   Ruler,
   TrendingUp,
-  Wrench,
   Hash,
   PiggyBank,
   BadgePercent,
@@ -51,13 +50,16 @@ import { constructionBudgetColumns } from '@/components/expenses/construction/bu
 import { maintenanceBudgetColumns } from '@/components/expenses/maintenance/budget-columns';
 import { AddConstructionBudgetItemForm } from '@/components/expenses/construction/add-budget-form';
 import { AddMaintenanceBudgetItemForm } from '@/components/expenses/maintenance/add-budget-form';
-
+import { ConstructionExpenseBarChart } 
+from '@/app/dashboard/reports/construction-expense-bar-chart';
 export default async function PropertyDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const propertyData = await getPropertyById(params.id);
+  const { id } = await params;
+
+  const propertyData = await getPropertyById(id);
   if (!propertyData) {
     notFound();
   }
@@ -77,21 +79,24 @@ export default async function PropertyDetailPage({
     getAllRentalIncomes(),
     getAllMaintenanceExpenses(),
     getCategories(),
-    getConstructionExpenses(params.id),
-    getRentalIncomes(params.id),
-    getMaintenanceExpenses(params.id),
-    getConstructionBudgetItems(params.id),
-    getMaintenanceBudgetItems(params.id),
+    getConstructionExpenses(id),
+    getRentalIncomes(id),
+    getMaintenanceExpenses(id),
+    getConstructionBudgetItems(id),
+    getMaintenanceBudgetItems(id),
   ]);
 
-  const property = calculatePropertyFinancials(
+  
+  const calculatedProperty = calculatePropertyFinancials(
     propertyData,
     allConstructionExpenses,
     allRentalIncomes,
     allMaintenanceExpenses
   );
 
-  const category = categories.find((c) => c.id === property.categoryId)?.name;
+  const category =
+    categories.find((c) => c.id === calculatedProperty.categoryId)?.name ||
+    'N/A';
 
   const DetailItem = ({
     icon: Icon,
@@ -136,22 +141,57 @@ export default async function PropertyDetailPage({
     </div>
   );
 
+  const categoryTotals = propertyConstructionBudgetItems.reduce(
+    (acc: Record<string, number>, item) => {
+      const category = item.category || 'Uncategorized';
+  
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+  
+      acc[category] += item.actualCost ?? 0;
+  
+      return acc;
+    },
+    {}
+  );
+  
+  const chartData = Object.entries(categoryTotals).map(
+    ([category, total]) => ({
+      category,
+      amount: total,
+    })
+  );
+  
+  
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
         <div>
-          <h1 className="text-3xl font-headline font-bold">{property.name}</h1>
-          <p className="text-muted-foreground">{property.location}</p>
+          <h1 className="text-3xl font-headline font-bold">
+            {calculatedProperty.name}
+          </h1>
+          <p className="text-muted-foreground">
+            {calculatedProperty.location}
+          </p>
         </div>
-        <Badge variant={property.type === 'Finished' ? 'default' : 'secondary'}>
-          {property.type}
+        <Badge
+          variant={
+            calculatedProperty.type === 'Finished'
+              ? 'default'
+              : 'secondary'
+          }
+        >
+          {calculatedProperty.type}
         </Badge>
       </header>
+
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {property.type === 'Finished' ? (
+            {calculatedProperty.type === 'Finished' ? (
               <>
                 <KpiCard
                   title="Net Profit"
@@ -159,9 +199,9 @@ export default async function PropertyDetailPage({
                     style: 'currency',
                     currency: 'ZMW',
                     maximumFractionDigits: 0,
-                  }).format(property.netProfit)}
+                  }).format(calculatedProperty.netProfit)}
                   helperText={
-                    property.netProfit >= 0
+                    calculatedProperty.netProfit >= 0
                       ? 'Profit after all costs'
                       : 'Loss after all costs'
                   }
@@ -169,10 +209,10 @@ export default async function PropertyDetailPage({
                 />
                 <KpiCard
                   title="Status"
-                  value={property.status}
+                  value={calculatedProperty.status}
                   helperText={
-                    property.status === 'Occupied'
-                      ? `Tenant: ${property.tenantName}`
+                    calculatedProperty.status === 'Occupied'
+                      ? `Tenant: ${calculatedProperty.tenantName}`
                       : 'Available for rent'
                   }
                   Icon={Building}
@@ -180,10 +220,10 @@ export default async function PropertyDetailPage({
                 <KpiCard
                   title="Investment Recovery"
                   value={
-                    property.totalInvestment > 0
+                    calculatedProperty.totalInvestment > 0
                       ? `${(
-                          (property.totalRentReceived /
-                            property.totalInvestment) *
+                          (calculatedProperty.totalRentReceived /
+                            calculatedProperty.totalInvestment) *
                           100
                         ).toFixed(0)}%`
                       : 'N/A'
@@ -197,7 +237,7 @@ export default async function PropertyDetailPage({
                     style: 'currency',
                     currency: 'ZMW',
                     maximumFractionDigits: 0,
-                  }).format(property.totalRentReceived)}
+                  }).format(calculatedProperty.totalRentReceived)}
                   helperText="Lifetime gross rental income"
                   Icon={PiggyBank}
                 />
@@ -210,17 +250,17 @@ export default async function PropertyDetailPage({
                     style: 'currency',
                     currency: 'ZMW',
                     maximumFractionDigits: 0,
-                  }).format(property.totalConstructionCost)}
+                  }).format(calculatedProperty.totalConstructionCost)}
                   helperText="On construction to date"
                   Icon={Banknote}
                 />
                 <KpiCard
                   title="Budget Utilization"
                   value={
-                    property.estimatedBudget && property.estimatedBudget > 0
+                    calculatedProperty.estimatedBudget && calculatedProperty.estimatedBudget > 0
                       ? `${(
-                          (property.totalConstructionCost /
-                            property.estimatedBudget) *
+                          (calculatedProperty.totalConstructionCost /
+                            calculatedProperty.estimatedBudget) *
                           100
                         ).toFixed(0)}%`
                       : 'N/A'
@@ -229,18 +269,18 @@ export default async function PropertyDetailPage({
                     style: 'currency',
                     currency: 'ZMW',
                     maximumFractionDigits: 0,
-                  }).format(property.estimatedBudget || 0)}`}
+                  }).format(calculatedProperty.estimatedBudget || 0)}`}
                   Icon={GanttChartSquare}
                 />
                 <KpiCard
                   title="Construction Stage"
-                  value={property.constructionStage}
+                  value={calculatedProperty.constructionStage}
                   helperText="Current phase of development"
                   Icon={Construction}
                 />
                 <KpiCard
                   title="Cost Overrun"
-                  value={property.costOverrunAlert ? 'Detected' : 'None'}
+                  value={calculatedProperty.costOverrunAlert ? 'Detected' : 'None'}
                   helperText="AI-powered analysis"
                   Icon={AlertCircle}
                 />
@@ -252,29 +292,29 @@ export default async function PropertyDetailPage({
               <CardTitle className="font-headline">Property Details</CardTitle>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-              <DetailItem icon={Hash} label="Property Code" value={property.code} />
+              <DetailItem icon={Hash} label="Property Code" value={calculatedProperty.code} />
               <DetailItem
                 icon={GanttChartSquare}
                 label="Category"
                 value={category || 'N/A'}
               />
-              <DetailItem icon={Ruler} label="Size" value={property.size} />
+              <DetailItem icon={Ruler} label="Size" value={calculatedProperty.size} />
               <DetailItem
                 icon={Calendar}
                 label="Date Created"
-                value={new Date(property.createdAt).toLocaleDateString()}
+                value={new Date(calculatedProperty.createdAt).toLocaleDateString()}
               />
 
-              {property.type === 'Finished' ? (
+              {calculatedProperty.type === 'Finished' ? (
                 <>
-                  <DetailItem icon={Building} label="Status" value={property.status} />
+                  <DetailItem icon={Building} label="Status" value={calculatedProperty.status} />
                   <DetailItem
                     icon={DollarSign}
                     label="Monthly Rent"
                     value={new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency: 'ZMW',
-                    }).format(property.monthlyRent)}
+                    }).format(calculatedProperty.monthlyRent)}
                   />
                 </>
               ) : (
@@ -282,7 +322,7 @@ export default async function PropertyDetailPage({
                   <DetailItem
                     icon={GanttChartSquare}
                     label="Construction Stage"
-                    value={property.constructionStage}
+                    value={calculatedProperty.constructionStage}
                   />
                   <DetailItem
                     icon={DollarSign}
@@ -290,7 +330,7 @@ export default async function PropertyDetailPage({
                     value={new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency: 'ZMW',
-                    }).format(property.estimatedBudget || 0)}
+                    }).format(calculatedProperty.estimatedBudget || 0)}
                   />
                 </>
               )}
@@ -299,7 +339,7 @@ export default async function PropertyDetailPage({
                   icon={FileText}
                   label="Description"
                   value={
-                    <p className="whitespace-pre-line">{property.description}</p>
+                    <p className="whitespace-pre-line">{calculatedProperty.description}</p>
                   }
                 />
               </div>
@@ -312,48 +352,48 @@ export default async function PropertyDetailPage({
               <CardTitle className="font-headline">Financial Overview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {property.type === 'Finished' && (
+              {calculatedProperty.type === 'Finished' && (
                 <InvestmentProgress
-                  totalInvestment={property.totalInvestment}
-                  rentReceived={property.totalRentReceived}
+                  totalInvestment={calculatedProperty.totalInvestment}
+                  rentReceived={calculatedProperty.totalRentReceived}
                 />
               )}
               <div className="space-y-4 pt-4">
                 <FinancialItem
                   label={
-                    property.type === 'Finished'
+                    calculatedProperty.type === 'Finished'
                       ? 'Total Investment'
                       : 'Total Spent'
                   }
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: 'ZMW',
-                  }).format(property.totalInvestment)}
+                  }).format(calculatedProperty.totalInvestment)}
                 />
                 <FinancialItem
                   label="Total Rent Received"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: 'ZMW',
-                  }).format(property.totalRentReceived)}
+                  }).format(calculatedProperty.totalRentReceived)}
                 />
                 <FinancialItem
                   label="Maintenance Costs"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: 'ZMW',
-                  }).format(property.totalMaintenanceCost)}
+                  }).format(calculatedProperty.totalMaintenanceCost)}
                 />
                 <FinancialItem
                   label="Net Profit"
                   value={new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: 'ZMW',
-                  }).format(property.netProfit)}
-                  isPositive={property.netProfit >= 0}
+                  }).format(calculatedProperty.netProfit)}
+                  isPositive={calculatedProperty.netProfit >= 0}
                 />
               </div>
-              <CostOverrunAlert reason={property.costOverrunAlert} />
+              <CostOverrunAlert reason={calculatedProperty.costOverrunAlert} />
             </CardContent>
           </Card>
         </div>
@@ -361,19 +401,19 @@ export default async function PropertyDetailPage({
 
       <Tabs
         defaultValue={
-          property.type === 'Under Construction' ? 'construction' : 'income'
+          calculatedProperty.type === 'Under Construction' ? 'construction' : 'income'
         }
       >
         <TabsList>
-          {property.type === 'Under Construction' && (
+          {calculatedProperty.type === 'Under Construction' && (
             <TabsTrigger value="construction">
               Construction Expenses
             </TabsTrigger>
           )}
-          {property.type === 'Finished' && (
+          {calculatedProperty.type === 'Finished' && (
             <TabsTrigger value="income">Rental Income</TabsTrigger>
           )}
-          {property.type === 'Finished' && (
+          {calculatedProperty.type === 'Finished' && (
             <TabsTrigger value="maintenance">Expenses</TabsTrigger>
           )}
         </TabsList>
@@ -382,7 +422,7 @@ export default async function PropertyDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Construction Expenses</CardTitle>
-                <AddConstructionExpenseForm propertyId={property.id} />
+                <AddConstructionExpenseForm propertyId={calculatedProperty.id} />
               </CardHeader>
               <CardContent>
                 <TransactionsDataTable
@@ -394,18 +434,19 @@ export default async function PropertyDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Construction Budget vs Actual</CardTitle>
+                  <CardTitle>Construction Budget</CardTitle>
                   <CardDescription>
                     Plan your construction items and compare estimated costs with actual spending.
                   </CardDescription>
                 </div>
-                <AddConstructionBudgetItemForm propertyId={property.id} />
+                <AddConstructionBudgetItemForm propertyId={calculatedProperty.id} />
               </CardHeader>
               <CardContent className="space-y-4">
                 <TransactionsDataTable
                   columns={constructionBudgetColumns}
                   data={propertyConstructionBudgetItems}
                 />
+                
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                   <div>
                     Estimated Total:{' '}
@@ -465,6 +506,9 @@ export default async function PropertyDetailPage({
                     </span>
                   </div>
                 </div>
+                <div className="mt-8">
+  <ConstructionExpenseBarChart data={chartData} />
+</div>
               </CardContent>
             </Card>
           </div>
@@ -487,7 +531,7 @@ export default async function PropertyDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Expenses</CardTitle>
-                <AddMaintenanceExpenseForm propertyId={property.id} />
+                <AddMaintenanceExpenseForm propertyId={calculatedProperty.id} />
               </CardHeader>
               <CardContent>
                 <TransactionsDataTable
@@ -499,12 +543,12 @@ export default async function PropertyDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Budget vs Actual</CardTitle>
+                  <CardTitle>Budget</CardTitle>
                   <CardDescription>
                     Plan any property-related items (repairs, improvements, decor) and track if you stayed within budget.
                   </CardDescription>
                 </div>
-                <AddMaintenanceBudgetItemForm propertyId={property.id} />
+                <AddMaintenanceBudgetItemForm propertyId={calculatedProperty.id} />
               </CardHeader>
               <CardContent className="space-y-4">
                 <TransactionsDataTable

@@ -29,6 +29,8 @@ import { addMaintenanceBudgetItemAction } from '../actions';
 
 const formSchema = z.object({
   itemName: z.string().min(1, 'Item name is required.'),
+  category: z.string().min(1, 'Category is required.'),
+  customCategory: z.string().optional(),
   estimatedCost: z.coerce
     .number()
     .min(0.01, 'Estimated cost must be greater than 0.'),
@@ -46,22 +48,39 @@ export function AddMaintenanceBudgetItemForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       itemName: '',
+      category: '',
+      customCategory: '',
       estimatedCost: 0,
     },
   });
 
   const onSubmit = async (values: MaintenanceBudgetFormValues) => {
     try {
-      await addMaintenanceBudgetItemAction(propertyId, values);
+      const finalCategory =
+        values.category === 'Other'
+          ? values.customCategory
+          : values.category;
+  
+      await addMaintenanceBudgetItemAction(propertyId, {
+        itemName: values.itemName,
+        estimatedCost: values.estimatedCost,
+        actualCost: 0,
+        category: finalCategory || '',
+      });
+  
       toast({
         title: 'Budget Item Added',
         description:
           'The maintenance budget item has been successfully added.',
       });
+  
       form.reset({
         itemName: '',
+        category: '',
+        customCategory: '',
         estimatedCost: 0,
       });
+  
       setOpen(false);
     } catch (error) {
       toast({
@@ -105,6 +124,50 @@ export function AddMaintenanceBudgetItemForm({
                 </FormItem>
               )}
             />
+          <FormField
+  control={form.control}
+  name="category"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Category</FormLabel>
+      <FormControl>
+        <select
+          {...field}
+          className="w-full border rounded-md h-9 px-3 text-sm"
+        >
+          <option value="">Select Category</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Cleaning">Cleaning</option>
+          <option value="Roofing">Roofing</option>
+          <option value="Security">Security</option>
+          <option value="Painting">Painting</option>
+          <option value="Other">Other</option>
+        </select>
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+            {form.watch('category') === 'Other' && (
+  <FormField
+    control={form.control}
+    name="customCategory"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Enter Custom Category</FormLabel>
+        <FormControl>
+          <Input
+            placeholder="e.g.  Security"
+            {...field}
+          />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+)}
+
             <FormField
               control={form.control}
               name="estimatedCost"

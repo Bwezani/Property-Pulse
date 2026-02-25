@@ -13,6 +13,23 @@ export const constructionBudgetColumns: ColumnDef<ConstructionBudgetItem>[] = [
     header: 'Item',
   },
   {
+    accessorKey: 'category',
+    header: 'Category',
+    cell: ({ row }) => {
+      const category = row.getValue('category') as string;
+  
+      return (
+        <div className="text-sm font-medium">
+          {category || (
+            <span className="text-xs text-muted-foreground">
+              Uncategorized
+            </span>
+          )}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: 'estimatedCost',
     header: 'Estimated Cost',
     cell: ({ row }) => {
@@ -60,6 +77,8 @@ export const constructionBudgetColumns: ColumnDef<ConstructionBudgetItem>[] = [
           });
         }
       };
+
+      
 
       return (
         <div className="flex justify-end gap-2">

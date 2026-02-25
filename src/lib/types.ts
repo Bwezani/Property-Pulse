@@ -77,6 +77,7 @@ export type ConstructionBudgetItem = {
   id: string;
   propertyId: string;
   itemName: string;
+  category: string;
   estimatedCost: number;
   actualCost: number;
 };
@@ -85,6 +86,7 @@ export type MaintenanceBudgetItem = {
   id: string;
   propertyId: string;
   itemName: string;
+  category: string;
   estimatedCost: number;
   actualCost: number;
 };
