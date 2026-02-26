@@ -163,7 +163,28 @@ export default async function PropertyDetailPage({
     })
   );
   
-  
+  const maintenanceChartData =
+  calculatedProperty.type === 'Finished'
+    ? Object.entries(
+        propertyMaintenanceBudgetItems.reduce(
+          (acc: Record<string, number>, item) => {
+            const category = item.category || 'Uncategorized';
+
+            if (!acc[category]) {
+              acc[category] = 0;
+            }
+
+            acc[category] += item.actualCost ?? 0;
+
+            return acc;
+          },
+          {}
+        )
+      ).map(([category, total]) => ({
+        category,
+        amount: total,
+      }))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -614,6 +635,10 @@ export default async function PropertyDetailPage({
                     </span>
                   </div>
                 </div>
+
+                <div className="mt-8">
+  <ConstructionExpenseBarChart data={maintenanceChartData} />
+</div>
               </CardContent>
             </Card>
           </div>

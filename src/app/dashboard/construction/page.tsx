@@ -95,7 +95,7 @@ export default async function ConstructionDashboardPage() {
       </div>
 
       {/* EXPENSE CHART */}
-<ConstructionExpenseBarChart data={expenseSummary} />
+
   
       {/* PROJECT LIST */}
       <div>
