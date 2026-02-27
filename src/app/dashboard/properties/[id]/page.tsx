@@ -41,17 +41,13 @@ import {
 import { InvestmentProgress } from '@/components/properties/investment-progress';
 import { CostOverrunAlert } from '@/components/expenses/cost-overrun-alert';
 import { TransactionsDataTable } from '@/components/transactions/data-table';
-import { constructionColumns } from '@/components/expenses/columns'; // Simplified import path if consolidated
+import { constructionColumns } from '@/components/expenses/columns'; 
 import { rentalIncomeColumns } from '@/components/income/rental/columns';
 import { maintenanceColumns } from '@/components/expenses/maintenance/columns';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { AddConstructionExpenseForm } from '@/components/expenses/construction/add-form';
 import { AddMaintenanceExpenseForm } from '@/components/expenses/maintenance/add-form';
-import { constructionBudgetColumns } from '@/components/expenses/construction/budget-columns';
-import { maintenanceBudgetColumns } from '@/components/expenses/maintenance/budget-columns';
-import { AddConstructionBudgetItemForm } from '@/components/expenses/construction/add-budget-form';
-import { AddMaintenanceBudgetItemForm } from '@/components/expenses/maintenance/add-budget-form';
-import { ConstructionExpenseBarChart } from '@/app/dashboard/reports/construction-expense-bar-chart';
+import { EditUnitForm } from '@/components/properties/edit-unit-form';
 import type { 
   Property, 
   ConstructionExpense, 
@@ -90,18 +86,6 @@ export default function PropertyDetailPage() {
     return query(collection(db, 'maintenance_expenses'), where('propertyId', '==', id));
   }, [db, id]);
   const { data: maintenanceExpenses } = useCollection<MaintenanceExpense>(qMaintenance);
-
-  const qCBudget = useMemoFirebase(() => {
-    if (!db || !id) return null;
-    return query(collection(db, 'construction_budget_items'), where('propertyId', '==', id));
-  }, [db, id]);
-  const { data: cBudgetItems } = useCollection<ConstructionBudgetItem>(qCBudget);
-
-  const qMBudget = useMemoFirebase(() => {
-    if (!db || !id) return null;
-    return query(collection(db, 'maintenance_budget_items'), where('propertyId', '==', id));
-  }, [db, id]);
-  const { data: mBudgetItems } = useCollection<MaintenanceBudgetItem>(qMBudget);
 
   if (isAuthLoading || isPropLoading) {
     return (
@@ -246,7 +230,7 @@ export default function PropertyDetailPage() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="font-headline text-xl">Unit Inventory</CardTitle>
-                  <CardDescription>Individual tenants and statuses for all units.</CardDescription>
+                  <CardDescription>Manage individual tenants and statuses for all units.</CardDescription>
                 </div>
                 <Users className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
@@ -260,6 +244,7 @@ export default function PropertyDetailPage() {
                         <th className="p-3 text-left font-medium">Tenant</th>
                         <th className="p-3 text-right font-medium">Monthly Rent</th>
                         <th className="p-3 text-center font-medium">Due Day</th>
+                        <th className="p-3 text-right font-medium w-16">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -281,6 +266,9 @@ export default function PropertyDetailPage() {
                             {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(unit.monthlyRent)}
                           </td>
                           <td className="p-3 text-center text-muted-foreground">{unit.paymentDueDay}</td>
+                          <td className="p-3 text-right">
+                            <EditUnitForm property={calculatedProperty} unit={unit} />
+                          </td>
                         </tr>
                       ))}
                     </tbody>
