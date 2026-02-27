@@ -27,20 +27,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { addConstructionExpenseAction } from '../actions';
-import { PlusCircle, CalendarIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { PlusCircle } from 'lucide-react';
 
 const formSchema = z.object({
   itemName: z.string().min(1, 'Item name is required.'),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
   unitPrice: z.coerce.number().min(0.01, 'Unit price must be positive.'),
   vendor: z.string().min(1, 'Vendor is required.'),
-  purchaseDate: z.date({
-    required_error: "A date is required.",
-  }),
+  purchaseDate: z.string().min(1, "A date is required."),
   notes: z.string().optional(),
 });
 
@@ -48,7 +42,8 @@ type ConstructionFormValues = z.infer<typeof formSchema>;
 
 export function AddConstructionExpenseForm({ propertyId }: { propertyId: string }) {
   const [open, setOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
+  
   const form = useForm<ConstructionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -57,6 +52,7 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
       unitPrice: 0,
       vendor: '',
       notes: '',
+      purchaseDate: today,
     }
   });
 
@@ -71,12 +67,23 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
 
   const onSubmit = async (data: ConstructionFormValues) => {
     try {
-      await addConstructionExpenseAction(propertyId, { ...data, totalPrice, purchaseDate: data.purchaseDate.toISOString() });
+      await addConstructionExpenseAction(propertyId, { 
+        ...data, 
+        totalPrice, 
+        purchaseDate: new Date(data.purchaseDate).toISOString() 
+      });
       toast({
         title: 'Expense Added',
         description: 'The construction expense has been successfully added.',
       });
-      form.reset();
+      form.reset({
+        quantity: 1,
+        itemName: '',
+        unitPrice: 0,
+        vendor: '',
+        notes: '',
+        purchaseDate: today,
+      });
       setOpen(false);
     } catch (error) {
       toast({
@@ -95,7 +102,7 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
           Add Expense
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]" onPointerDown={(e) => e.stopPropagation()}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Construction Expense</DialogTitle>
           <DialogDescription>
@@ -167,42 +174,9 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Purchase Date</FormLabel>
-                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start" onPointerDown={(e) => e.stopPropagation()}>
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(date) => {
-                          if (date) {
-                            field.onChange(date);
-                            setIsCalendarOpen(false);
-                          }
-                        }}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

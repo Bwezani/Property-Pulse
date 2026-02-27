@@ -33,11 +33,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, CalendarIcon, Building2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { PlusCircle, Building2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -48,9 +44,7 @@ const formSchema = z.object({
   expenseType: z.enum(['Repair', 'Utility', 'Cleaning', 'Other'], { required_error: 'Expense type is required.'}),
   description: z.string().min(1, 'Description is required.'),
   amount: z.coerce.number().min(0.01, 'Amount must be positive.'),
-  date: z.date({
-    required_error: "A date is required.",
-  }),
+  date: z.string().min(1, "A date is required."),
   vendor: z.string().min(1, 'Vendor is required.'),
   unitIds: z.array(z.string()).default([]),
 });
@@ -59,8 +53,8 @@ type MaintenanceFormValues = z.infer<typeof formSchema>;
 
 export function AddMaintenanceExpenseForm({ property }: { property: Property }) {
   const [open, setOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const db = useFirestore();
+  const today = new Date().toISOString().split('T')[0];
 
   const form = useForm<MaintenanceFormValues>({
     resolver: zodResolver(formSchema),
@@ -69,6 +63,7 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
         amount: 0,
         vendor: '',
         unitIds: [],
+        date: today,
     }
   });
 
@@ -85,7 +80,7 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
         expenseType: values.expenseType,
         description: values.description,
         amount: values.amount,
-        date: values.date.toISOString(),
+        date: new Date(values.date).toISOString(),
         vendor: values.vendor,
         unitIds: values.unitIds,
         unitNames: selectedUnitNames,
@@ -98,7 +93,13 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
             title: 'Expense Added',
             description: 'The maintenance expense has been successfully added.',
         });
-        form.reset();
+        form.reset({
+            description: '',
+            amount: 0,
+            vendor: '',
+            unitIds: [],
+            date: today,
+        });
         setOpen(false);
       })
       .catch(async (error) => {
@@ -121,7 +122,7 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
           Add Expense
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0" onPointerDown={(e) => e.stopPropagation()}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Add Maintenance Expense</DialogTitle>
           <DialogDescription>
@@ -203,42 +204,9 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
                 render={({ field }) => (
                     <FormItem className="flex flex-col">
                     <FormLabel>Date</FormLabel>
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                        <PopoverTrigger asChild>
-                        <FormControl>
-                            <Button
-                            variant={"outline"}
-                            className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                            )}
-                            >
-                            {field.value ? (
-                                format(field.value, "PPP")
-                            ) : (
-                                <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                        </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start" onPointerDown={(e) => e.stopPropagation()}>
-                        <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              if (date) {
-                                field.onChange(date);
-                                setIsCalendarOpen(false);
-                              }
-                            }}
-                            disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                        />
-                        </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                        <Input type="date" {...field} />
+                    </FormControl>
                     <FormMessage />
                     </FormItem>
                 )}
