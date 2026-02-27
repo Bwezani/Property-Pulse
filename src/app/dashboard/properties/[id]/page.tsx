@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -340,7 +341,7 @@ export default function PropertyDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Maintenance Expenses</CardTitle>
-              <AddMaintenanceExpenseForm propertyId={id} />
+              <AddMaintenanceExpenseForm property={calculatedProperty} />
             </CardHeader>
             <CardContent>
               <TransactionsDataTable columns={maintenanceColumns} data={maintenanceExpenses || []} />

@@ -88,6 +88,8 @@ export type MaintenanceExpense = {
   amount: number;
   date: string; // ISO date string
   vendor: string;
+  unitIds?: string[];
+  unitNames?: string[];
 };
 
 export type ConstructionBudgetItem = {
