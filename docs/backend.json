@@ -2,113 +2,60 @@
 {
   "entities": {
     "Category": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Category",
       "type": "object",
-      "description": "Represents a classification for properties, helping to organize and filter them (e.g., Residential, Commercial).",
+      "description": "Represents a classification for properties (e.g., Residential, Commercial).",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Category entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the property category (e.g., 'Residential', 'Commercial', 'Land')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief explanation or context for this property category."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" }
       },
-      "required": [
-        "id",
-        "name",
-        "description"
-      ]
+      "required": ["id", "name"]
     },
     "Property": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Property",
       "type": "object",
-      "description": "Manages details for both finished and under-construction properties.",
+      "description": "Details for finished or under-construction properties.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Property entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The common name given to the property."
-        },
-        "code": {
-          "type": "string",
-          "description": "A unique identifier code for the property."
-        },
-        "categoryId": {
-          "type": "string",
-          "description": "Reference to Category."
-        },
-        "location": {
-          "type": "string",
-          "description": "The physical location or address of the property."
-        },
-        "size": {
-          "type": "string",
-          "description": "The total size of the property."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description."
-        },
-        "type": {
-          "type": "string",
-          "description": "Indicates the stage (e.g., 'Finished', 'Under Construction')."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Creation date-time.",
-          "format": "date-time"
-        },
-        "isDeleted": {
-          "type": "boolean",
-          "description": "Soft-delete flag."
-        },
-        "status": {
-          "type": "string",
-          "description": "Occupancy status (e.g., 'Occupied', 'Vacant')."
-        },
-        "monthlyRent": {
-          "type": "number",
-          "description": "Expected monthly rent."
-        },
-        "paymentDueDay": {
-          "type": "number",
-          "description": "Rent due day."
-        },
-        "tenantName": {
-          "type": "string",
-          "description": "Current tenant name."
-        },
-        "tenantContact": {
-          "type": "string",
-          "description": "Tenant contact info."
-        },
-        "totalInvestment": {
-          "type": "number",
-          "description": "Total investment cost."
-        },
-        "members": {
-          "type": "object",
-          "description": "A map of user IDs to roles (admin, manager, viewer) for authorization."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "location": { "type": "string" },
+        "size": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["Finished", "Under Construction"] },
+        "status": { "type": "string", "enum": ["Occupied", "Vacant"] },
+        "monthlyRent": { "type": "number" },
+        "totalInvestment": { "type": "number" },
+        "constructionStage": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "members": { "type": "object" }
       },
-      "required": [
-        "name",
-        "code",
-        "location",
-        "type",
-        "createdAt"
-      ]
+      "required": ["name", "code", "location", "type", "createdAt"]
+    },
+    "ConstructionExpense": {
+      "title": "ConstructionExpense",
+      "type": "object",
+      "properties": {
+        "propertyId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unitPrice": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "vendor": { "type": "string" },
+        "purchaseDate": { "type": "string", "format": "date-time" }
+      }
+    },
+    "RentalIncome": {
+      "title": "RentalIncome",
+      "type": "object",
+      "properties": {
+        "propertyId": { "type": "string" },
+        "tenantName": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Paid", "Pending", "Overdue"] }
+      }
     }
   },
   "auth": {
@@ -117,23 +64,29 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/finished_properties/{propertyId}",
-        "definition": {
-          "entityName": "Property",
-          "schema": {
-            "$ref": "#/backend/entities/Property"
-          },
-          "description": "Collection for all finished properties.",
-          "params": [
-            {
-              "name": "propertyId",
-              "description": "The unique ID of the property."
-            }
-          ]
-        }
-      }
-    ]
+    "/finished_properties/{propertyId}": {
+      "schema": { "$ref": "#/backend/entities/Property" },
+      "description": "Collection for all properties."
+    },
+    "/construction_expenses/{expenseId}": {
+      "schema": { "$ref": "#/backend/entities/ConstructionExpense" },
+      "description": "Expenses incurred during construction."
+    },
+    "/rental_incomes/{incomeId}": {
+      "schema": { "$ref": "#/backend/entities/RentalIncome" },
+      "description": "Rental income records."
+    },
+    "/maintenance_expenses/{expenseId}": {
+      "schema": { "type": "object" },
+      "description": "Maintenance records."
+    },
+    "/construction_budget_items/{itemId}": {
+      "schema": { "type": "object" },
+      "description": "Budget line items for construction."
+    },
+    "/maintenance_budget_items/{itemId}": {
+      "schema": { "type": "object" },
+      "description": "Budget line items for maintenance."
+    }
   }
 }
