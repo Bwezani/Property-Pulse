@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -47,6 +48,7 @@ type ConstructionFormValues = z.infer<typeof formSchema>;
 
 export function AddConstructionExpenseForm({ propertyId }: { propertyId: string }) {
   const [open, setOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<ConstructionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -165,7 +167,7 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Purchase Date</FormLabel>
-                  <Popover>
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -188,7 +190,10 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                          field.onChange(date);
+                          setIsCalendarOpen(false);
+                        }}
                         disabled={(date) =>
                           date > new Date() || date < new Date("1900-01-01")
                         }

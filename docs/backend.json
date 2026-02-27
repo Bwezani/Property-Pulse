@@ -68,6 +68,20 @@
         "purchaseDate": { "type": "string", "format": "date-time" }
       }
     },
+    "MaintenanceExpense": {
+      "title": "MaintenanceExpense",
+      "type": "object",
+      "properties": {
+        "propertyId": { "type": "string" },
+        "expenseType": { "type": "string", "enum": ["Repair", "Utility", "Cleaning", "Other"] },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "vendor": { "type": "string" },
+        "unitIds": { "type": "array", "items": { "type": "string" } },
+        "unitNames": { "type": "array", "items": { "type": "string" } }
+      }
+    },
     "RentalIncome": {
       "title": "RentalIncome",
       "type": "object",
@@ -97,6 +111,10 @@
     "/construction_expenses/{expenseId}": {
       "schema": { "$ref": "#/backend/entities/ConstructionExpense" },
       "description": "Expenses incurred during construction."
+    },
+    "/maintenance_expenses/{expenseId}": {
+      "schema": { "$ref": "#/backend/entities/MaintenanceExpense" },
+      "description": "Expenses incurred for ongoing maintenance."
     },
     "/rental_incomes/{incomeId}": {
       "schema": { "$ref": "#/backend/entities/RentalIncome" },

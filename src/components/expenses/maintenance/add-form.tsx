@@ -59,6 +59,7 @@ type MaintenanceFormValues = z.infer<typeof formSchema>;
 
 export function AddMaintenanceExpenseForm({ property }: { property: Property }) {
   const [open, setOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const db = useFirestore();
 
   const form = useForm<MaintenanceFormValues>({
@@ -202,7 +203,7 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
                 render={({ field }) => (
                     <FormItem className="flex flex-col">
                     <FormLabel>Date</FormLabel>
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                         <FormControl>
                             <Button
@@ -225,7 +226,10 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
                         <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                              field.onChange(date);
+                              setIsCalendarOpen(false);
+                            }}
                             disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
                             }
