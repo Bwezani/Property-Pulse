@@ -37,36 +37,6 @@ import { toast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
-const unitSchema = z.object({
-  unitName: z.string().min(1, 'Unit name/number is required.'),
-  status: z.enum(['Occupied', 'Vacant']),
-  monthlyRent: z.coerce.number().min(0, 'Rent cannot be negative.'),
-  paymentDueDay: z.coerce.number().min(1).max(31),
-  tenantName: z.string().optional(),
-  tenantContact: z.string().optional(),
-});
-
-const formSchema = z
-  .object({
-    name: z.string().min(1, 'Property name is required.'),
-    categoryId: z.string().min(1, 'Category is required.'),
-    location: z.string().min(1, 'Location is required.'),
-    size: z.string().min(1, 'Size is required.'),
-    totalInvestment: z.coerce
-      .number()
-      .min(0.01, 'Total investment must be greater than 0.'),
-    units: z.coerce.number().min(1, 'Units must be at least 1.').default(1),
-    unitsList: z.array(unitSchema),
-    // Fallback fields for single unit properties
-    status: z.enum(['Occupied', 'Vacant']).optional(),
-    monthlyRent: z.coerce.number().optional(),
-    paymentDueDay: z.coerce.number().optional(),
-    tenantName: z.string().optional(),
-    tenantContact: z.string().optional(),
-  });
-
-type FinishedPropertyFormValues = z.infer<typeof formSchema>;
-
 const CATEGORIES = [
   { id: 'stand-alone', name: 'Stand Alone' },
   { id: 'apartment', name: 'Apartment' },
@@ -78,6 +48,32 @@ const CATEGORIES = [
 ];
 
 const MULTI_UNIT_CATEGORIES = ['apartment', 'flat', 'commercial', 'warehouse'];
+
+const unitSchema = z.object({
+  unitName: z.string().min(1, 'Unit name/number is required.'),
+  status: z.enum(['Occupied', 'Vacant']),
+  monthlyRent: z.coerce.number().min(0, 'Rent cannot be negative.'),
+  paymentDueDay: z.coerce.number().min(1).max(31),
+  tenantName: z.string().optional(),
+  tenantContact: z.string().optional(),
+});
+
+const formSchema = z.object({
+  name: z.string().min(1, 'Property name is required.'),
+  categoryId: z.string().min(1, 'Category is required.'),
+  location: z.string().min(1, 'Location is required.'),
+  size: z.string().min(1, 'Size is required.'),
+  totalInvestment: z.coerce.number().min(0.01, 'Total investment must be greater than 0.'),
+  units: z.coerce.number().min(1, 'Units must be at least 1.').default(1),
+  unitsList: z.array(unitSchema),
+  status: z.enum(['Occupied', 'Vacant']).optional(),
+  monthlyRent: z.coerce.number().optional(),
+  paymentDueDay: z.coerce.number().optional(),
+  tenantName: z.string().optional(),
+  tenantContact: z.string().optional(),
+});
+
+type FinishedPropertyFormValues = z.infer<typeof formSchema>;
 
 export function AddFinishedPropertyForm() {
   const [open, setOpen] = useState(false);
@@ -93,8 +89,17 @@ export function AddFinishedPropertyForm() {
       size: '',
       totalInvestment: 0,
       units: 1,
-      unitsList: [{ unitName: 'Main Unit', status: 'Occupied', monthlyRent: 0, paymentDueDay: 1, tenantName: '', tenantContact: '' }],
-      status: 'Occupied',
+      unitsList: [
+        {
+          unitName: 'Unit 1',
+          status: 'Vacant',
+          monthlyRent: 0,
+          paymentDueDay: 1,
+          tenantName: '',
+          tenantContact: '',
+        },
+      ],
+      status: 'Vacant',
       monthlyRent: 0,
       paymentDueDay: 1,
     },
@@ -106,31 +111,36 @@ export function AddFinishedPropertyForm() {
   });
 
   const categoryId = form.watch('categoryId');
-  const unitsCount = form.watch('units');
+  const unitsCountRaw = form.watch('units');
   const isMultiUnit = MULTI_UNIT_CATEGORIES.includes(categoryId);
 
-  // Sync unitsList with units count when multi-unit is active
+  // Sync unitsList with units count
   useEffect(() => {
-    if (isMultiUnit) {
-      const currentCount = fields.length;
-      if (unitsCount > currentCount) {
-        for (let i = currentCount; i < unitsCount; i++) {
-          append({
+    if (!isMultiUnit) return;
+
+    const unitsCount = Math.max(1, Number(unitsCountRaw) || 1);
+    const currentCount = fields.length;
+
+    if (unitsCount > currentCount) {
+      for (let i = currentCount; i < unitsCount; i++) {
+        append(
+          {
             unitName: `Unit ${i + 1}`,
             status: 'Vacant',
             monthlyRent: 0,
             paymentDueDay: 1,
             tenantName: '',
             tenantContact: '',
-          }, { shouldFocus: false }); // CRITICAL: shouldFocus: false prevents auto-scrolling to bottom
-        }
-      } else if (unitsCount < currentCount && unitsCount > 0) {
-        for (let i = currentCount; i > unitsCount; i--) {
-          remove(i - 1);
-        }
+          },
+          { shouldFocus: false }
+        );
+      }
+    } else if (unitsCount < currentCount) {
+      for (let i = currentCount; i > unitsCount; i--) {
+        remove(i - 1);
       }
     }
-  }, [unitsCount, isMultiUnit, append, remove, fields.length]);
+  }, [unitsCountRaw, isMultiUnit, append, remove, fields.length]);
 
   const onSubmit = async (values: FinishedPropertyFormValues) => {
     if (!db || !user) {
@@ -143,17 +153,18 @@ export function AddFinishedPropertyForm() {
     }
 
     try {
-      const finalUnitsList = isMultiUnit 
-        ? values.unitsList 
-        : [{
-            id: 'unit-1',
-            unitName: 'Main Unit',
-            status: values.status || 'Vacant',
-            monthlyRent: values.monthlyRent || 0,
-            paymentDueDay: values.paymentDueDay || 1,
-            tenantName: values.tenantName || '',
-            tenantContact: values.tenantContact || '',
-          }];
+      const finalUnitsList = isMultiUnit
+        ? values.unitsList
+        : [
+            {
+              unitName: 'Main Unit',
+              status: values.status || 'Vacant',
+              monthlyRent: values.monthlyRent || 0,
+              paymentDueDay: values.paymentDueDay || 1,
+              tenantName: values.tenantName || '',
+              tenantContact: values.tenantContact || '',
+            },
+          ];
 
       await addDoc(collection(db, 'finished_properties'), {
         name: values.name,
@@ -166,7 +177,10 @@ export function AddFinishedPropertyForm() {
         imageId: 'default-img',
         totalInvestment: values.totalInvestment,
         units: isMultiUnit ? values.units : 1,
-        unitsList: finalUnitsList.map((u, i) => ({ ...u, id: `unit-${i + 1}-${Date.now()}` })),
+        unitsList: finalUnitsList.map((u, i) => ({
+          ...u,
+          id: `unit-${i + 1}-${Date.now()}`,
+        })),
         createdAt: new Date().toISOString(),
         isDeleted: false,
         members: { [user.uid]: 'admin' },
@@ -185,16 +199,15 @@ export function AddFinishedPropertyForm() {
 
       toast({
         title: 'Property Added',
-        description: 'The property and its units have been successfully added.',
+        description: 'The property has been successfully added.',
       });
       form.reset();
       setOpen(false);
     } catch (error) {
-      console.error('Error adding property:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not add the property to Firestore.',
+        description: 'Could not add the property.',
       });
     }
   };
@@ -208,19 +221,19 @@ export function AddFinishedPropertyForm() {
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden shadow-2xl">
-        <DialogHeader className="p-6 pb-4 border-b">
+        <DialogHeader className="p-6 pb-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
             <Building2 className="h-6 w-6 text-primary" />
             Add Finished Property
           </DialogTitle>
-          <DialogDescription className="text-base">
-            Enter details for your property. For multi-unit buildings, manage each unit's tenant and rent separately.
+          <DialogDescription>
+            Configure your property details. Multi-unit types allow tracking individual tenants.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-            <ScrollArea className="flex-1 bg-muted/10">
+            <ScrollArea className="flex-1">
               <div className="p-6 space-y-8 pb-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
@@ -228,7 +241,7 @@ export function AddFinishedPropertyForm() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold">Property Name</FormLabel>
+                        <FormLabel>Property Name</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g. Greenwood Villa" {...field} />
                         </FormControl>
@@ -241,7 +254,7 @@ export function AddFinishedPropertyForm() {
                     name="categoryId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold">Category</FormLabel>
+                        <FormLabel>Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -268,7 +281,7 @@ export function AddFinishedPropertyForm() {
                     name="location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold">Location</FormLabel>
+                        <FormLabel>Location</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g. Lusaka, Zambia" {...field} />
                         </FormControl>
@@ -281,9 +294,9 @@ export function AddFinishedPropertyForm() {
                     name="totalInvestment"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold">Total Investment Cost (ZMW)</FormLabel>
+                        <FormLabel>Total Investment Cost (ZMW)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g. 500000" {...field} />
+                          <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -297,7 +310,7 @@ export function AddFinishedPropertyForm() {
                     name="size"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold">Overall Size</FormLabel>
+                        <FormLabel>Size</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g. 2400 sqft" {...field} />
                         </FormControl>
@@ -311,7 +324,7 @@ export function AddFinishedPropertyForm() {
                       name="units"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-semibold">Total Number of Units</FormLabel>
+                          <FormLabel>Total Units</FormLabel>
                           <FormControl>
                             <Input type="number" min={1} {...field} />
                           </FormControl>
@@ -323,38 +336,43 @@ export function AddFinishedPropertyForm() {
                 </div>
 
                 {isMultiUnit ? (
-                  <div className="space-y-6 pt-6 border-t border-border/50">
+                  <div className="space-y-6 pt-6 border-t">
                     <div className="flex items-center gap-2 mb-4">
                       <Home className="h-5 w-5 text-primary" />
-                      <h3 className="text-lg font-headline font-semibold">Unit Configuration</h3>
+                      <h3 className="text-lg font-headline font-semibold">Unit Details</h3>
                     </div>
                     <Alert className="bg-primary/5 border-primary/20">
                       <Info className="h-4 w-4 text-primary" />
-                      <AlertTitle className="text-primary font-bold">Managing {unitsCount} Units</AlertTitle>
+                      <AlertTitle className="text-primary font-bold">Managing {fields.length} Units</AlertTitle>
                       <AlertDescription>
-                        Each unit will have its own independent lease, tenant, and rent tracking.
+                        Set unique tenant information for each unit.
                       </AlertDescription>
                     </Alert>
-                    
+
                     <div className="grid gap-6">
                       {fields.map((field, index) => (
-                        <div key={field.id} className="p-4 border rounded-xl bg-card space-y-4 shadow-sm transition-all hover:border-primary/50">
+                        <div key={field.id} className="p-4 border rounded-xl bg-card space-y-4 shadow-sm">
                           <div className="flex items-center justify-between border-b pb-2">
-                             <h4 className="font-bold text-sm text-primary uppercase tracking-tight">Unit #{index + 1}</h4>
-                             {fields.length > 1 && (
-                               <Button variant="ghost" size="sm" className="h-8 text-destructive hover:bg-destructive/10" onClick={() => remove(index)}>
-                                 <Trash2 className="h-4 w-4" />
-                               </Button>
-                             )}
+                            <h4 className="font-bold text-sm text-primary uppercase">Unit {index + 1}</h4>
+                            {fields.length > 1 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-destructive"
+                                onClick={() => remove(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                             <FormField
+                            <FormField
                               control={form.control}
                               name={`unitsList.${index}.unitName`}
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel className="text-xs">Unit Name/No.</FormLabel>
+                                  <FormLabel className="text-xs">Name/No.</FormLabel>
                                   <FormControl><Input className="h-8" {...field} /></FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -391,34 +409,34 @@ export function AddFinishedPropertyForm() {
                           </div>
 
                           {form.watch(`unitsList.${index}.status`) === 'Occupied' && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg animate-in fade-in slide-in-from-top-1 duration-200">
-                               <FormField
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                              <FormField
                                 control={form.control}
                                 name={`unitsList.${index}.tenantName`}
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel className="text-xs">Tenant Name</FormLabel>
-                                    <FormControl><Input className="h-8 bg-background" placeholder="e.g. John Doe" {...field} /></FormControl>
+                                    <FormControl><Input className="h-8 bg-background" {...field} /></FormControl>
                                   </FormItem>
                                 )}
                               />
-                               <FormField
+                              <FormField
                                 control={form.control}
                                 name={`unitsList.${index}.tenantContact`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="text-xs">Contact Information</FormLabel>
-                                    <FormControl><Input className="h-8 bg-background" placeholder="Phone or Email" {...field} /></FormControl>
+                                    <FormLabel className="text-xs">Contact</FormLabel>
+                                    <FormControl><Input className="h-8 bg-background" {...field} /></FormControl>
                                   </FormItem>
                                 )}
                               />
-                               <FormField
+                              <FormField
                                 control={form.control}
                                 name={`unitsList.${index}.paymentDueDay`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="text-xs">Rent Due Day (1-31)</FormLabel>
-                                    <FormControl><Input className="h-8 bg-background" type="number" min={1} max={31} {...field} /></FormControl>
+                                    <FormLabel className="text-xs">Due Day (1-31)</FormLabel>
+                                    <FormControl><Input className="h-8 bg-background" type="number" {...field} /></FormControl>
                                   </FormItem>
                                 )}
                               />
@@ -429,10 +447,10 @@ export function AddFinishedPropertyForm() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-6 pt-6 border-t border-border/50">
+                  <div className="space-y-6 pt-6 border-t">
                     <div className="flex items-center gap-2 mb-4">
                       <User className="h-5 w-5 text-primary" />
-                      <h3 className="text-lg font-headline font-semibold">Single Lease Management</h3>
+                      <h3 className="text-lg font-headline font-semibold">Lease Details</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <FormField
@@ -440,7 +458,7 @@ export function AddFinishedPropertyForm() {
                         name="status"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold">Current Status</FormLabel>
+                            <FormLabel>Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -459,7 +477,7 @@ export function AddFinishedPropertyForm() {
                         name="monthlyRent"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold">Monthly Rent</FormLabel>
+                            <FormLabel>Monthly Rent</FormLabel>
                             <FormControl><Input type="number" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -470,7 +488,7 @@ export function AddFinishedPropertyForm() {
                         name="paymentDueDay"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold">Rent Due Day (1-31)</FormLabel>
+                            <FormLabel>Due Day</FormLabel>
                             <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -478,14 +496,14 @@ export function AddFinishedPropertyForm() {
                       />
                     </div>
                     {form.watch('status') === 'Occupied' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-muted/50 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-muted/50 rounded-xl border">
                         <FormField
                           control={form.control}
                           name="tenantName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-semibold">Primary Tenant Name</FormLabel>
-                              <FormControl><Input className="bg-background" placeholder="Full Name" {...field} /></FormControl>
+                              <FormLabel>Tenant Name</FormLabel>
+                              <FormControl><Input className="bg-background" {...field} /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -495,8 +513,8 @@ export function AddFinishedPropertyForm() {
                           name="tenantContact"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-semibold">Tenant Contact Details</FormLabel>
-                              <FormControl><Input className="bg-background" placeholder="Phone, Email, or Address" {...field} /></FormControl>
+                              <FormLabel>Contact Info</FormLabel>
+                              <FormControl><Input className="bg-background" {...field} /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -508,15 +526,10 @@ export function AddFinishedPropertyForm() {
               </div>
             </ScrollArea>
 
-            <DialogFooter className="p-6 border-t bg-card z-10">
-              <div className="flex w-full items-center justify-between gap-4">
-                 <p className="text-xs text-muted-foreground hidden md:block">
-                   Fields marked as Occupied will trigger automated monthly rent records.
-                 </p>
-                 <Button type="submit" className="w-full md:w-auto font-bold px-8 shadow-lg transition-transform active:scale-95" disabled={form.formState.isSubmitting}>
-                   {form.formState.isSubmitting ? 'Saving Property...' : 'Save Property'}
-                 </Button>
-              </div>
+            <DialogFooter className="p-6 border-t bg-card shrink-0">
+              <Button type="submit" className="w-full md:w-auto font-bold px-8" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Saving...' : 'Save Property'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
