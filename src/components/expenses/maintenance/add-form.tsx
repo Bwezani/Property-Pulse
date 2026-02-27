@@ -121,7 +121,7 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
           Add Expense
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0" onPointerDown={(e) => e.stopPropagation()}>
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Add Maintenance Expense</DialogTitle>
           <DialogDescription>
@@ -222,13 +222,15 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
                             </Button>
                         </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0" align="start" onPointerDown={(e) => e.stopPropagation()}>
                         <Calendar
                             mode="single"
                             selected={field.value}
                             onSelect={(date) => {
-                              field.onChange(date);
-                              setIsCalendarOpen(false);
+                              if (date) {
+                                field.onChange(date);
+                                setIsCalendarOpen(false);
+                              }
                             }}
                             disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")

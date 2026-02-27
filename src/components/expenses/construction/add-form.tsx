@@ -95,7 +95,7 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
           Add Expense
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" onPointerDown={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>Add Construction Expense</DialogTitle>
           <DialogDescription>
@@ -186,13 +186,15 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" onPointerDown={(e) => e.stopPropagation()}>
                       <Calendar
                         mode="single"
                         selected={field.value}
                         onSelect={(date) => {
-                          field.onChange(date);
-                          setIsCalendarOpen(false);
+                          if (date) {
+                            field.onChange(date);
+                            setIsCalendarOpen(false);
+                          }
                         }}
                         disabled={(date) =>
                           date > new Date() || date < new Date("1900-01-01")
