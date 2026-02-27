@@ -25,38 +25,35 @@ import {
   Building,
   Calendar,
   DollarSign,
-  FileText,
-  GanttChartSquare,
   Ruler,
   TrendingUp,
   Hash,
   PiggyBank,
   BadgePercent,
   Banknote,
-  AlertCircle,
   Construction,
   Loader2,
   LayoutGrid,
   Users,
+  Wallet,
 } from 'lucide-react';
 import { InvestmentProgress } from '@/components/properties/investment-progress';
-import { CostOverrunAlert } from '@/components/expenses/cost-overrun-alert';
 import { TransactionsDataTable } from '@/components/transactions/data-table';
 import { constructionColumns } from '@/components/expenses/columns'; 
 import { rentalIncomeColumns } from '@/components/income/rental/columns';
 import { maintenanceColumns } from '@/components/expenses/maintenance/columns';
+import { constructionBudgetColumns } from '@/components/expenses/construction/budget-columns';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { AddConstructionExpenseForm } from '@/components/expenses/construction/add-form';
 import { AddMaintenanceExpenseForm } from '@/components/expenses/maintenance/add-form';
+import { AddConstructionBudgetItemForm } from '@/components/expenses/construction/add-budget-form';
 import { EditUnitForm } from '@/components/properties/edit-unit-form';
 import type { 
   Property, 
   ConstructionExpense, 
   RentalIncome, 
   MaintenanceExpense,
-  ConstructionBudgetItem,
-  MaintenanceBudgetItem,
-  PropertyUnit
+  ConstructionBudgetItem
 } from '@/lib/types';
 
 export default function PropertyDetailPage() {
@@ -87,6 +84,12 @@ export default function PropertyDetailPage() {
     return query(collection(db, 'maintenance_expenses'), where('propertyId', '==', id));
   }, [db, id]);
   const { data: maintenanceExpenses } = useCollection<MaintenanceExpense>(qMaintenance);
+
+  const qBudget = useMemoFirebase(() => {
+    if (!db || !id) return null;
+    return query(collection(db, 'construction_budget_items'), where('propertyId', '==', id));
+  }, [db, id]);
+  const { data: budgetItems } = useCollection<ConstructionBudgetItem>(qBudget);
 
   if (isAuthLoading || isPropLoading) {
     return (
@@ -130,19 +133,20 @@ export default function PropertyDetailPage() {
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       <header className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground">
             {calculatedProperty.name}
           </h1>
-          <p className="text-muted-foreground">
-            {calculatedProperty.location}
-          </p>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{calculatedProperty.location}</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-           <Badge variant={calculatedProperty.type === 'Finished' ? 'default' : 'secondary'} className="px-4 py-1">
-            {calculatedProperty.type}
+           <Badge variant={calculatedProperty.type === 'Finished' ? 'default' : 'secondary'} className="px-4 py-1 text-sm">
+            {calculatedProperty.type === 'Finished' ? 'Finished Property' : `Development: ${calculatedProperty.constructionStage}`}
           </Badge>
           {totalUnits > 1 && (
             <Badge variant="outline" className="border-primary text-primary px-3 py-1 flex items-center gap-1">
@@ -188,13 +192,25 @@ export default function PropertyDetailPage() {
                 <KpiCard
                   title="Total Spent"
                   value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(calculatedProperty.totalConstructionCost)}
-                  helperText="On construction to date"
+                  helperText="Total project costs to date"
                   Icon={Banknote}
                 />
                 <KpiCard
-                  title="Construction Stage"
+                  title="Project Budget"
+                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(calculatedProperty.estimatedBudget || 0)}
+                  helperText="Initial projected cost"
+                  Icon={Wallet}
+                />
+                <KpiCard
+                  title="Budget Utilization"
+                  value={calculatedProperty.estimatedBudget ? `${((calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100).toFixed(0)}%` : '0%'}
+                  helperText="Percentage of budget used"
+                  Icon={BadgePercent}
+                />
+                <KpiCard
+                  title="Current Stage"
                   value={calculatedProperty.constructionStage}
-                  helperText="Current phase of development"
+                  helperText="Current project status"
                   Icon={Construction}
                 />
               </>
@@ -203,18 +219,18 @@ export default function PropertyDetailPage() {
           
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
-              <CardTitle className="font-headline text-xl">Property Details</CardTitle>
+              <CardTitle className="font-headline text-xl">General Overview</CardTitle>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-              <DetailItem icon={Hash} label="Property Code" value={calculatedProperty.code} />
-              <DetailItem icon={Ruler} label="Size" value={calculatedProperty.size} />
+              <DetailItem icon={Hash} label="Reference Code" value={calculatedProperty.code} />
+              <DetailItem icon={Ruler} label="Property Size" value={calculatedProperty.size} />
               <DetailItem
                 icon={Calendar}
-                label="Date Created"
+                label="Date Registered"
                 value={calculatedProperty.createdAt ? new Date(calculatedProperty.createdAt).toLocaleDateString() : 'N/A'}
               />
               {totalUnits > 1 && (
-                <DetailItem icon={LayoutGrid} label="Total Units" value={`${totalUnits} Individual Spaces`} />
+                <DetailItem icon={LayoutGrid} label="Configuration" value={`${totalUnits} Unit Multi-Dwelling`} />
               )}
               {calculatedProperty.type === 'Finished' && totalUnits === 1 && (
                 <DetailItem
@@ -231,7 +247,7 @@ export default function PropertyDetailPage() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="font-headline text-xl">Unit Inventory</CardTitle>
-                  <CardDescription>Manage individual tenants and statuses for all units.</CardDescription>
+                  <CardDescription>Status and tenant mapping for all individual units.</CardDescription>
                 </div>
                 <Users className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
@@ -283,35 +299,53 @@ export default function PropertyDetailPage() {
         <div className="lg:col-span-1 space-y-6">
           <Card className="border-border/50 shadow-md">
             <CardHeader>
-              <CardTitle className="font-headline text-xl">Financial Overview</CardTitle>
+              <CardTitle className="font-headline text-xl">Financial Health</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {calculatedProperty.type === 'Finished' && (
+              {calculatedProperty.type === 'Finished' ? (
                 <InvestmentProgress
                   totalInvestment={calculatedProperty.totalInvestment}
                   rentReceived={calculatedProperty.totalRentReceived}
                 />
+              ) : (
+                <div className="space-y-2">
+                   <div className="flex justify-between text-xs font-medium">
+                      <span className="text-muted-foreground">Project Spending</span>
+                      <span>{calculatedProperty.estimatedBudget ? ((calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100).toFixed(0) : 0}%</span>
+                   </div>
+                   <Progress value={calculatedProperty.estimatedBudget ? Math.min(100, (calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100) : 0} className="h-2" />
+                </div>
               )}
               <div className="space-y-4 pt-4 border-t">
                 <FinancialItem
-                  label={calculatedProperty.type === 'Finished' ? 'Initial Investment' : 'Total Spent'}
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.totalInvestment)}
+                  label={calculatedProperty.type === 'Finished' ? 'Initial Investment' : 'Actual Spent'}
+                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.type === 'Finished' ? calculatedProperty.totalInvestment : calculatedProperty.totalConstructionCost)}
                 />
-                <FinancialItem
-                  label="Total Rent Received"
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.totalRentReceived)}
-                />
-                <FinancialItem
-                  label="Maintenance Costs"
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.totalMaintenanceCost)}
-                />
-                <div className="pt-2">
-                   <FinancialItem
-                    label="Net Profit"
-                    value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.netProfit)}
-                    isPositive={calculatedProperty.netProfit >= 0}
+                {calculatedProperty.type === 'Finished' && (
+                  <>
+                    <FinancialItem
+                      label="Total Rent Received"
+                      value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.totalRentReceived)}
+                    />
+                    <FinancialItem
+                      label="Maintenance Costs"
+                      value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.totalMaintenanceCost)}
+                    />
+                    <div className="pt-2">
+                      <FinancialItem
+                        label="Net Profit"
+                        value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.netProfit)}
+                        isPositive={calculatedProperty.netProfit >= 0}
+                      />
+                    </div>
+                  </>
+                )}
+                {calculatedProperty.type === 'Under Construction' && (
+                  <FinancialItem
+                    label="Remaining Budget"
+                    value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(Math.max(0, (calculatedProperty.estimatedBudget || 0) - calculatedProperty.totalConstructionCost))}
                   />
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -320,16 +354,47 @@ export default function PropertyDetailPage() {
 
       <Tabs defaultValue={calculatedProperty.type === 'Under Construction' ? 'construction' : 'income'} className="w-full">
         <TabsList className="grid w-full grid-cols-3 lg:w-auto">
-          {calculatedProperty.type === 'Under Construction' && <TabsTrigger value="construction">Construction</TabsTrigger>}
-          {calculatedProperty.type === 'Finished' && <TabsTrigger value="income">Income</TabsTrigger>}
+          {calculatedProperty.type === 'Under Construction' && <TabsTrigger value="construction">Expenditure</TabsTrigger>}
+          {calculatedProperty.type === 'Under Construction' && <TabsTrigger value="budget">Project Budget</TabsTrigger>}
+          {calculatedProperty.type === 'Finished' && <TabsTrigger value="income">Rental Income</TabsTrigger>}
           {calculatedProperty.type === 'Finished' && <TabsTrigger value="maintenance">Maintenance</TabsTrigger>}
         </TabsList>
+
+        <TabsContent value="construction" className="mt-6 space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Construction Expenditure</CardTitle>
+                <CardDescription>Detailed log of all material, labour, and transport costs.</CardDescription>
+              </div>
+              <AddConstructionExpenseForm propertyId={calculatedProperty.id} />
+            </CardHeader>
+            <CardContent>
+              <TransactionsDataTable columns={constructionColumns} data={constructionExpenses || []} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="budget" className="mt-6 space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Projected Budget</CardTitle>
+                <CardDescription>Define planned costs for materials and labour to track against actuals.</CardDescription>
+              </div>
+              <AddConstructionBudgetItemForm propertyId={calculatedProperty.id} />
+            </CardHeader>
+            <CardContent>
+              <TransactionsDataTable columns={constructionBudgetColumns} data={budgetItems || []} />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="income" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Rental Income</CardTitle>
-              <CardDescription>Automated monthly tracking for all occupied units.</CardDescription>
+              <CardTitle>Rental Income Log</CardTitle>
+              <CardDescription>Consolidated monthly tracking for all occupied units.</CardDescription>
             </CardHeader>
             <CardContent>
               <TransactionsDataTable columns={rentalIncomeColumns} data={rentalIncomes || []} />
@@ -340,7 +405,10 @@ export default function PropertyDetailPage() {
         <TabsContent value="maintenance" className="mt-6 space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Maintenance Expenses</CardTitle>
+              <div>
+                <CardTitle>Maintenance Log</CardTitle>
+                <CardDescription>Track repairs and ongoing utility costs for finished units.</CardDescription>
+              </div>
               <AddMaintenanceExpenseForm property={calculatedProperty} />
             </CardHeader>
             <CardContent>
@@ -350,5 +418,25 @@ export default function PropertyDetailPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function MapPin({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
   );
 }
