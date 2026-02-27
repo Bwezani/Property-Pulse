@@ -4,7 +4,7 @@ export type PropertyCategory = {
 };
 
 export type Property = {
-  id:string;
+  id: string;
   name: string;
   code: string;
   categoryId: string;
@@ -15,6 +15,7 @@ export type Property = {
   imageId: string;
   createdAt: string; // ISO date string
   isDeleted: boolean;
+  members: Record<string, string>;
 
   // Fields for Finished Properties
   totalInvestment: number;
@@ -59,8 +60,9 @@ export type RentalIncome = {
   amount: number;
   paymentDate: string; // ISO date string
   dueDate: string; // ISO date string
-  paymentMethod: 'Bank Transfer' | 'Cash' | 'Credit Card';
+  paymentMethod: 'Bank Transfer' | 'Cash' | 'Credit Card' | 'System Automated';
   status: 'Paid' | 'Pending' | 'Overdue';
+  monthKey: string; // e.g. "2024-05"
 };
 
 export type MaintenanceExpense = {
