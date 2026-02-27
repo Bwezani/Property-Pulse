@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -32,7 +33,8 @@ import {
 } from '@/components/ui/select';
 import { PlusCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { addFinishedPropertyAction } from './actions';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 const formSchema = z
   .object({
@@ -83,6 +85,9 @@ type FinishedPropertyFormValues = z.infer<typeof formSchema>;
 
 export function AddFinishedPropertyForm() {
   const [open, setOpen] = useState(false);
+  const db = useFirestore();
+  const { user } = useUser();
+
   const form = useForm<FinishedPropertyFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -101,29 +106,56 @@ export function AddFinishedPropertyForm() {
   const status = form.watch('status');
 
   const onSubmit = async (values: FinishedPropertyFormValues) => {
-    try {
-      await addFinishedPropertyAction(values);
-      toast({
-        title: 'Property Added',
-        description: 'The finished property has been successfully added.',
-      });
-      form.reset({
-        name: '',
-        location: '',
-        size: '',
-        totalInvestment: 0,
-        status: 'Occupied',
-        monthlyRent: 0,
-        paymentDueDay: 1,
-        tenantName: '',
-        tenantContact: '',
-      });
-      setOpen(false);
-    } catch (error) {
+    if (!db || !user) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not add the property.',
+        description: 'You must be signed in to add a property.',
+      });
+      return;
+    }
+
+    try {
+      const isOccupied = values.status === 'Occupied';
+      
+      await addDoc(collection(db, 'finished_properties'), {
+        name: values.name,
+        code: `FP-${Date.now().toString().slice(-6)}`,
+        categoryId: 'cat-1',
+        location: values.location,
+        size: values.size,
+        description: '',
+        type: 'Finished',
+        imageId: 'default-img',
+        totalInvestment: values.totalInvestment,
+        status: values.status,
+        monthlyRent: isOccupied ? values.monthlyRent : 0,
+        paymentDueDay: isOccupied ? values.paymentDueDay : 0,
+        tenantName: isOccupied ? (values.tenantName || '') : '',
+        tenantContact: isOccupied ? (values.tenantContact || '') : '',
+        createdAt: new Date().toISOString(),
+        isDeleted: false,
+        members: { [user.uid]: 'admin' },
+        totalConstructionCost: 0,
+        totalRentReceived: 0,
+        totalMaintenanceCost: 0,
+        remainingInvestment: values.totalInvestment,
+        totalProfit: 0,
+        netProfit: 0,
+      });
+
+      toast({
+        title: 'Property Added',
+        description: 'The finished property has been successfully added to Firestore.',
+      });
+      form.reset();
+      setOpen(false);
+    } catch (error) {
+      console.error('Error adding property:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not add the property to Firestore.',
       });
     }
   };
@@ -296,4 +328,3 @@ export function AddFinishedPropertyForm() {
     </Dialog>
   );
 }
-

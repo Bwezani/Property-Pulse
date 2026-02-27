@@ -1,28 +1,3 @@
-/**
- * Property Pulse - Firestore Security Rules
- * 
- * Core Philosophy:
- * This ruleset implements a robust, multi-tiered authorization model designed for a property management system. 
- * It balances global administrative oversight with granular, property-specific access control.
- * 
- * Data Structure:
- * 1. Global Roles: Hierarchy-independent collections (/roles_admin, /roles_accountant, /roles_viewer) 
- *    establish system-wide permissions.
- * 2. Shared Property Access: The system uses a 'Closed Collaborator' model for the /properties collection. 
- *    Access is governed by a 'members' map within each document (e.g., members: { 'uid': 'role' }).
- * 3. Denormalized Subcollections: To optimize performance and avoid costly get() calls, sub-entities 
- *    (ConstructionExpense, RentalIncome, MaintenanceExpense) denormalize the parent property's 
- *    membership map into a 'propertyMembers' field on every document.
- * 
- * Key Security Decisions:
- * - Read-Only Defaults: The /categories collection is globally readable by authenticated users but 
- *   requires a global 'admin' role for modifications.
- * - Resource-Specific Roles: Authorization for property data is primarily determined by the 
- *   denormalized membership maps, supporting 'admin', 'manager', and 'viewer' roles per property.
- * - Global Overrides: Users in the global 'admin' role have bypass permissions for management tasks.
- * - Relational Integrity: On creation, documents are verified to ensure their internal foreign keys 
- *   (e.g., propertyId) align with their hierarchical path in Firestore.
- */
 
 rules_version = '2';
 service cloud.firestore {
@@ -30,149 +5,44 @@ service cloud.firestore {
 
     // --- Helper Functions ---
 
-    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user's UID matches the provided ID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the user has the global Admin role. */
     function hasGlobalAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    /** @description Checks if the user has the global Accountant role. */
-    function hasGlobalAccountant() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_accountant/$(request.auth.uid));
+    function isMember(data) {
+      return isSignedIn() && (data.members[request.auth.uid] != null || hasGlobalAdmin());
     }
 
-    /** @description Checks if the user is a member of the property based on the denormalized map. */
-    function isPropertyMember(data) {
-      return isSignedIn() && data.members[request.auth.uid] != null;
-    }
-
-    /** @description Checks if the user is an admin for the specific property. */
-    function isPropertyAdmin(data) {
-      return isSignedIn() && data.members[request.auth.uid] == 'admin';
-    }
-
-    /** @description Checks if the user is a member of the subcollection resource based on 'propertyMembers'. */
-    function isSubResourceMember(data) {
-      return isSignedIn() && data.propertyMembers[request.auth.uid] != null;
-    }
-
-    /** @description Checks if the user is an admin of the subcollection resource. */
-    function isSubResourceAdmin(data) {
-      return isSignedIn() && data.propertyMembers[request.auth.uid] == 'admin';
+    function isAdmin(data) {
+      return isSignedIn() && (data.members[request.auth.uid] == 'admin' || hasGlobalAdmin());
     }
 
     // --- Collection Rules ---
 
-    /**
-     * @description Top-level collection for property classification categories.
-     * @path /categories/{categoryId}
-     * @allow (get) Any signed-in user viewing the list of property types.
-     * @deny (create) A non-admin user attempting to add a new category.
-     * @principle Public authenticated read, global admin-only write.
-     */
-    match /categories/{categoryId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if hasGlobalAdmin();
-    }
-
-    /**
-     * @description Global role assignments for Admin privileges.
-     * @path /roles_admin/{userId}
-     * @allow (get) A user checking their own admin status.
-     * @deny (update) A user trying to grant themselves admin privileges.
-     * @principle Self-read for verification, admin-only write for control.
-     */
-    match /roles_admin/{userId} {
-      allow get, list: if isOwner(userId);
-      allow create, update, delete: if hasGlobalAdmin();
-    }
-
-    /**
-     * @description Global role assignments for Accountant privileges.
-     * @path /roles_accountant/{userId}
-     * @allow (get) A user checking their own accountant status.
-     * @deny (create) A standard user assigning an accountant role.
-     * @principle Self-read for verification, admin-only write for control.
-     */
-    match /roles_accountant/{userId} {
-      allow get, list: if isOwner(userId);
-      allow create, update, delete: if hasGlobalAdmin();
-    }
-
-    /**
-     * @description Global role assignments for Viewer privileges.
-     * @path /roles_viewer/{userId}
-     * @allow (get) A user checking their own viewer status.
-     * @principle Self-read for verification, admin-only write for control.
-     */
-    match /roles_viewer/{userId} {
-      allow get, list: if isOwner(userId);
-      allow create, update, delete: if hasGlobalAdmin();
-    }
-
-    /**
-     * @description Core property documents using a membership map for access control.
-     * @path /properties/{propertyId}
-     * @allow (create) A user creating a property and setting themselves as the 'admin' member.
-     * @deny (delete) A 'manager' or 'viewer' attempting to delete the property.
-     * @principle Shared access model with role-based validation within the document.
-     */
-    match /properties/{propertyId} {
-      allow get, list: if isPropertyMember(resource.data) || hasGlobalAdmin();
+    match /finished_properties/{propertyId} {
+      allow get, list: if isMember(resource.data);
       allow create: if isSignedIn() && request.resource.data.members[request.auth.uid] == 'admin';
-      allow update: if resource != null && (isPropertyAdmin(resource.data) || hasGlobalAdmin());
-      allow delete: if resource != null && (isPropertyAdmin(resource.data) || hasGlobalAdmin());
+      allow update, delete: if isAdmin(resource.data);
+    }
 
-      /**
-       * @description Subcollection for tracking construction expenses.
-       * @path /properties/{propertyId}/constructionExpenses/{expenseId}
-       * @allow (list) A property member querying expenses for their property.
-       * @deny (update) A member changing the propertyId to move the expense to another property.
-       * @principle Authorization independence through denormalized membership maps.
-       */
-      match /constructionExpenses/{expenseId} {
-        allow get, list: if isSubResourceMember(resource.data) || hasGlobalAdmin();
-        allow create: if isSignedIn() && (request.resource.data.propertyMembers[request.auth.uid] != null || hasGlobalAdmin()) && request.resource.data.propertyId == propertyId;
-        allow update: if resource != null && (isSubResourceMember(resource.data) || hasGlobalAdmin()) && request.resource.data.propertyId == resource.data.propertyId;
-        allow delete: if resource != null && (isSubResourceAdmin(resource.data) || hasGlobalAdmin());
-      }
-
-      /**
-       * @description Subcollection for tracking rental income.
-       * @path /properties/{propertyId}/rentalIncomes/{incomeId}
-       * @allow (get) An accountant viewing specific income records.
-       * @deny (create) A user creating an income record for a property they aren't a member of.
-       * @principle Enforces path-to-data consistency (propertyId).
-       */
-      match /rentalIncomes/{incomeId} {
-        allow get, list: if isSubResourceMember(resource.data) || hasGlobalAdmin() || hasGlobalAccountant();
-        allow create: if isSignedIn() && (request.resource.data.propertyMembers[request.auth.uid] != null || hasGlobalAdmin()) && request.resource.data.propertyId == propertyId;
-        allow update: if resource != null && (isSubResourceMember(resource.data) || hasGlobalAdmin() || hasGlobalAccountant()) && request.resource.data.propertyId == resource.data.propertyId;
-        allow delete: if resource != null && (isSubResourceAdmin(resource.data) || hasGlobalAdmin());
-      }
-
-      /**
-       * @description Subcollection for tracking maintenance expenses.
-       * @path /properties/{propertyId}/maintenanceExpenses/{expenseId}
-       * @allow (update) A property manager updating a maintenance description.
-       * @deny (delete) A user without admin rights trying to remove a record.
-       * @principle Prototyping flexibility: authorizes based on membership map without schema enforcement.
-       */
-      match /maintenanceExpenses/{expenseId} {
-        allow get, list: if isSubResourceMember(resource.data) || hasGlobalAdmin();
-        allow create: if isSignedIn() && (request.resource.data.propertyMembers[request.auth.uid] != null || hasGlobalAdmin()) && request.resource.data.propertyId == propertyId;
-        allow update: if resource != null && (isSubResourceMember(resource.data) || hasGlobalAdmin()) && request.resource.data.propertyId == resource.data.propertyId;
-        allow delete: if resource != null && (isSubResourceAdmin(resource.data) || hasGlobalAdmin());
-      }
+    match /properties/{propertyId} {
+      allow get, list: if isMember(resource.data);
+      allow create: if isSignedIn() && request.resource.data.members[request.auth.uid] == 'admin';
+      allow update: if isAdmin(resource.data);
+      allow delete: if isAdmin(resource.data);
+    }
+    
+    match /roles_admin/{userId} {
+      allow get: if isOwner(userId);
+      allow create, update, delete: if hasGlobalAdmin();
     }
   }
 }
