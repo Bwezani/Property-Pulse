@@ -1,3 +1,4 @@
+
 'use client';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { RentalIncome } from '@/lib/types';
@@ -17,6 +18,11 @@ const StatusBadge = ({ status }: { status: 'Paid' | 'Pending' | 'Overdue' }) => 
 
 
 export const rentalIncomeColumns: ColumnDef<RentalIncome>[] = [
+    {
+        accessorKey: 'unitName',
+        header: 'Unit',
+        cell: ({ row }) => <div className="font-medium">{row.original.unitName || 'Main'}</div>,
+    },
     {
         accessorKey: 'tenantName',
         header: 'Tenant',

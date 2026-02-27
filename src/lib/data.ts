@@ -40,6 +40,18 @@ let properties: Property[] = [
     tenantName: 'John Doe',
     tenantContact: 'john.doe@email.com',
     constructionStage: 'Completed',
+    units: 1,
+    unitsList: [
+      {
+        id: 'unit-1-mock',
+        unitName: 'Main Villa',
+        status: 'Occupied',
+        tenantName: 'John Doe',
+        tenantContact: 'john.doe@email.com',
+        monthlyRent: 2200,
+        paymentDueDay: 1,
+      }
+    ],
     totalConstructionCost: 0,
     totalRentReceived: 0,
     totalMaintenanceCost: 0,
@@ -95,6 +107,18 @@ let properties: Property[] = [
     tenantName: 'Innovate Corp',
     tenantContact: 'contact@innovatecorp.com',
     constructionStage: 'Completed',
+    units: 1,
+    unitsList: [
+      {
+        id: 'unit-3-mock',
+        unitName: 'Suite 101',
+        status: 'Occupied',
+        tenantName: 'Innovate Corp',
+        tenantContact: 'contact@innovatecorp.com',
+        monthlyRent: 8000,
+        paymentDueDay: 5,
+      }
+    ],
     totalConstructionCost: 0,
     totalRentReceived: 0,
     totalMaintenanceCost: 0,

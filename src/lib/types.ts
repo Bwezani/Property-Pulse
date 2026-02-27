@@ -1,3 +1,4 @@
+
 export type PropertyCategory = {
   id: string;
   name: string;
@@ -69,6 +70,7 @@ export type RentalIncome = {
   id: string;
   propertyId: string;
   unitId?: string; // Track which unit the rent is for
+  unitName?: string; // Descriptive name of the unit
   tenantName: string;
   amount: number;
   paymentDate: string; // ISO date string

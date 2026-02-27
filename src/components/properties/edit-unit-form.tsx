@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Edit2, User } from 'lucide-react';
+import { Edit2, User, CalendarDays } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -62,7 +63,7 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
       unitName: unit.unitName,
       status: unit.status,
       monthlyRent: unit.monthlyRent,
-      paymentDueDay: unit.paymentDueDay,
+      paymentDueDay: unit.paymentDueDay || 1,
       tenantName: unit.tenantName || '',
       tenantContact: unit.tenantContact || '',
     },
@@ -111,59 +112,84 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
           <span className="sr-only">Edit Unit</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>Edit Unit: {unit.unitName}</DialogTitle>
+          <DialogTitle>Edit Unit Configuration</DialogTitle>
           <DialogDescription>
-            Update the occupancy and lease details for this specific unit.
+            Update lease terms, tenant information, and rent collection schedule for <strong>{unit.unitName}</strong>.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="unitName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unit Name/No.</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
               <FormField
                 control={form.control}
-                name="status"
+                name="unitName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Occupied">Occupied</SelectItem>
-                        <SelectItem value="Vacant">Vacant</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Unit Name/Number</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Occupancy Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Occupied">Occupied</SelectItem>
+                          <SelectItem value="Vacant">Vacant</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="monthlyRent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monthly Rent (ZMW)</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-primary">
+                <CalendarDays className="h-4 w-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">Collection Schedule</span>
+              </div>
               <FormField
                 control={form.control}
-                name="monthlyRent"
+                name="paymentDueDay"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Monthly Rent</FormLabel>
+                    <FormLabel>Rent Collection Day (1-31)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input type="number" min={1} max={31} placeholder="e.g. 5" {...field} />
                     </FormControl>
+                    <FormDescription>
+                      The day of the month when rent is automatically recorded.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -171,58 +197,43 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
             </div>
 
             {form.watch('status') === 'Occupied' && (
-              <div className="space-y-4 pt-2 border-t mt-2">
+              <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center gap-2 text-primary">
                   <User className="h-4 w-4" />
-                  <span className="text-sm font-bold uppercase tracking-wider">Tenant Details</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Tenant Information</span>
                 </div>
                 <FormField
                   control={form.control}
                   name="tenantName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel>Primary Tenant Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <Input placeholder="e.g. Michael Smith" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="tenantContact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Info</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Email or Phone" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="paymentDueDay"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Due Day (1-31)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min={1} max={31} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="tenantContact"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Details (Email or Phone)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. +260 970 000 000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             )}
 
             <DialogFooter>
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                {form.formState.isSubmitting ? 'Saving changes...' : 'Save Unit Details'}
               </Button>
             </DialogFooter>
           </form>
