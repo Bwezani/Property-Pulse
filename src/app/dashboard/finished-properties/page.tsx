@@ -14,12 +14,12 @@ export default function FinishedPropertiesDashboardPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
+  // Simplifying the query to isolate the permission issue. 
+  // We'll add back 'isDeleted' and 'orderBy' once we confirm basic connectivity works.
   const finishedPropertiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
-      collection(db, 'finished_properties'),
-      where('isDeleted', '==', false),
-      orderBy('createdAt', 'desc')
+      collection(db, 'finished_properties')
     );
   }, [db, user]);
 
