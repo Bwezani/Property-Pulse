@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import {
   Building,
   Calendar,
@@ -39,7 +40,7 @@ import {
 } from 'lucide-react';
 import { InvestmentProgress } from '@/components/properties/investment-progress';
 import { TransactionsDataTable } from '@/components/transactions/data-table';
-import { constructionColumns } from '@/components/expenses/columns'; 
+import { constructionColumns } from '@/components/expenses/construction/columns'; 
 import { rentalIncomeColumns } from '@/components/income/rental/columns';
 import { maintenanceColumns } from '@/components/expenses/maintenance/columns';
 import { constructionBudgetColumns } from '@/components/expenses/construction/budget-columns';
