@@ -68,7 +68,7 @@ export function AddConstructionPropertyForm() {
       location: '',
       size: '',
       constructionStage: 'Foundation',
-      estimatedBudget: undefined,
+      estimatedBudget: 0,
     },
   });
 
