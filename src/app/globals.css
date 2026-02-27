@@ -12,6 +12,10 @@
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
+    /* === Popovers === */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
     /* === Primary (Executive Blue) === */
     --primary: 221 70% 45%;
     --primary-foreground: 210 40% 98%;
@@ -53,6 +57,9 @@
 
     --card: 222 25% 12%;
     --card-foreground: 210 40% 96%;
+
+    --popover: 222 25% 12%;
+    --popover-foreground: 210 40% 96%;
 
     --primary: 221 70% 60%;
     --primary-foreground: 222 47% 11%;
