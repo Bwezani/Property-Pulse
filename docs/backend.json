@@ -1,0 +1,435 @@
+{
+  "entities": {
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a classification for properties, helping to organize and filter them (e.g., Residential, Commercial).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the property category (e.g., 'Residential', 'Commercial', 'Land')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief explanation or context for this property category."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    "Property": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Property",
+      "type": "object",
+      "description": "Manages details for both finished and under-construction properties, including core information and specific attributes based on its lifecycle stage.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Property entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The common name given to the property."
+        },
+        "code": {
+          "type": "string",
+          "description": "A unique identifier code for the property, distinct from its primary key."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to Category. (Relationship: Category 1:N Property)"
+        },
+        "location": {
+          "type": "string",
+          "description": "The physical location or address of the property."
+        },
+        "size": {
+          "type": "number",
+          "description": "The total size of the property, typically in square meters or square feet."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description providing more information about the property."
+        },
+        "propertyType": {
+          "type": "string",
+          "description": "Indicates the current stage of the property (e.g., 'Finished', 'UnderConstruction')."
+        },
+        "dateCreated": {
+          "type": "string",
+          "description": "The date and time when the property record was created.",
+          "format": "date-time"
+        },
+        "isDeleted": {
+          "type": "boolean",
+          "description": "A flag indicating if the property record has been soft-deleted (true) or is active (false)."
+        },
+        "status": {
+          "type": "string",
+          "description": "The occupancy status for finished properties (e.g., 'Occupied', 'Vacant')."
+        },
+        "monthlyRent": {
+          "type": "number",
+          "description": "The expected monthly rental income for finished properties."
+        },
+        "paymentDueDay": {
+          "type": "number",
+          "description": "The day of the month (1-31) when rent payments are typically due for finished properties."
+        },
+        "tenantName": {
+          "type": "string",
+          "description": "The name of the current tenant, if the finished property is occupied."
+        },
+        "tenantContactDetails": {
+          "type": "string",
+          "description": "Contact information for the current tenant (e.g., email, phone number)."
+        },
+        "totalInvestmentCost": {
+          "type": "number",
+          "description": "The total investment cost for the property, typically set when construction is complete and used as a baseline for investment recovery and profitability calculations."
+        },
+        "constructionStage": {
+          "type": "string",
+          "description": "The current stage of construction for under-construction properties (e.g., 'Foundation', 'Roofing', 'Finishing')."
+        },
+        "estimatedBudget": {
+          "type": "number",
+          "description": "An optional estimated budget for under-construction properties."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "code",
+        "categoryId",
+        "location",
+        "size",
+        "description",
+        "propertyType",
+        "dateCreated",
+        "isDeleted"
+      ]
+    },
+    "ConstructionExpense": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ConstructionExpense",
+      "type": "object",
+      "description": "Tracks individual expenses incurred during the construction phase of a property.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ConstructionExpense entity."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to Property. (Relationship: Property 1:N ConstructionExpense)"
+        },
+        "itemName": {
+          "type": "string",
+          "description": "The name or description of the item or service purchased."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity of the item purchased."
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "The price per unit of the item."
+        },
+        "totalPrice": {
+          "type": "number",
+          "description": "The total cost for the item (quantity * unit price), auto-calculated but stored."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "The vendor or supplier from whom the item was purchased."
+        },
+        "datePurchased": {
+          "type": "string",
+          "description": "The date when the item was purchased.",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any additional notes or details about the expense."
+        },
+        "receiptUri": {
+          "type": "string",
+          "description": "A URI pointing to an uploaded receipt for the expense.",
+          "format": "uri"
+        },
+        "sentimentAnalysisAlert": {
+          "type": "boolean",
+          "description": "A flag indicating if the sentiment analysis tool detected potential unexpected cost overruns related to this expense."
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "itemName",
+        "quantity",
+        "unitPrice",
+        "totalPrice",
+        "vendor",
+        "datePurchased",
+        "sentimentAnalysisAlert"
+      ]
+    },
+    "RentalIncome": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RentalIncome",
+      "type": "object",
+      "description": "Records all rental payments received for finished properties, tracking their status and details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the RentalIncome entity."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to Property. (Relationship: Property 1:N RentalIncome)"
+        },
+        "tenantName": {
+          "type": "string",
+          "description": "The name of the tenant who made the payment."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of rent paid."
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "The date when the payment was received.",
+          "format": "date-time"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The date when the payment was originally due.",
+          "format": "date-time"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "The method used for the payment (e.g., 'Bank Transfer', 'Cash', 'Credit Card')."
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The current status of the payment (e.g., 'Paid', 'Pending', 'Overdue')."
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "tenantName",
+        "amount",
+        "paymentDate",
+        "dueDate",
+        "paymentMethod",
+        "paymentStatus"
+      ]
+    },
+    "MaintenanceExpense": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MaintenanceExpense",
+      "type": "object",
+      "description": "Tracks ongoing expenses related to maintenance and general upkeep of finished properties.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MaintenanceExpense entity."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to Property. (Relationship: Property 1:N MaintenanceExpense)"
+        },
+        "expenseType": {
+          "type": "string",
+          "description": "The category of the maintenance expense (e.g., 'Repair', 'Utility', 'Cleaning')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the maintenance expense incurred."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total amount of the maintenance expense."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date when the maintenance expense was incurred.",
+          "format": "date-time"
+        },
+        "vendor": {
+          "type": "string",
+          "description": "The vendor or service provider for the maintenance work."
+        },
+        "receiptUri": {
+          "type": "string",
+          "description": "A URI pointing to an uploaded receipt for the maintenance expense.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "expenseType",
+        "description",
+        "amount",
+        "date",
+        "vendor"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/categories",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Top-level collection for property categories. Access: Read-only for all authenticated users, Write access restricted to global 'admin' role."
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "UserRole",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection for assigning global 'admin' roles. A document's existence at `/roles_admin/{uid}` grants admin privileges to that user. Access: Read by current user, Write by global 'admin' role.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user assigned the 'admin' role."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_accountant/{userId}",
+        "definition": {
+          "entityName": "UserRole",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection for assigning global 'accountant' roles. A document's existence at `/roles_accountant/{uid}` grants accountant privileges to that user. Access: Read by current user, Write by global 'admin' role.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user assigned the 'accountant' role."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_viewer/{userId}",
+        "definition": {
+          "entityName": "UserRole",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection for assigning global 'viewer' roles. A document's existence at `/roles_viewer/{uid}` grants viewer privileges to that user. Access: Read by current user, Write by global 'admin' role.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user assigned the 'viewer' role."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/properties/{propertyId}",
+        "definition": {
+          "entityName": "Property",
+          "schema": {
+            "$ref": "#/backend/entities/Property"
+          },
+          "description": "Collection for individual properties. Includes a denormalized 'members' map (`members: { [uid: string]: 'admin' | 'manager' | 'viewer' }`) for property-specific authorization, defining who can access and manage this property and its subcollections. Access is determined by the `members` map, supporting different roles per property.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique ID of the property."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/properties/{propertyId}/constructionExpenses/{expenseId}",
+        "definition": {
+          "entityName": "ConstructionExpense",
+          "schema": {
+            "$ref": "#/backend/entities/ConstructionExpense"
+          },
+          "description": "Subcollection under a specific property to track construction expenses. Includes a denormalized 'propertyMembers' map for authorization independence, copied from its parent Property's 'members' map. This allows for security rules to validate access without reading the parent property document.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique ID of the parent property."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique ID of the construction expense."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/properties/{propertyId}/rentalIncomes/{incomeId}",
+        "definition": {
+          "entityName": "RentalIncome",
+          "schema": {
+            "$ref": "#/backend/entities/RentalIncome"
+          },
+          "description": "Subcollection under a specific property to record rental income. Includes a denormalized 'propertyMembers' map for authorization independence, copied from its parent Property's 'members' map. This ensures security rules can validate access without reading the parent property document.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique ID of the parent property."
+            },
+            {
+              "name": "incomeId",
+              "description": "The unique ID of the rental income record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/properties/{propertyId}/maintenanceExpenses/{expenseId}",
+        "definition": {
+          "entityName": "MaintenanceExpense",
+          "schema": {
+            "$ref": "#/backend/entities/MaintenanceExpense"
+          },
+          "description": "Subcollection under a specific property to track maintenance expenses. Includes a denormalized 'propertyMembers' map for authorization independence, copied from its parent Property's 'members' map. This allows for security rules to validate access without reading the parent property document.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique ID of the parent property."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique ID of the maintenance expense."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and highly debuggable by strictly adhering to the core design principles and mandates. The central pillar of this design is **Authorization Independence** through aggressive denormalization, specifically for property-related access. Each `Property` document includes a `members` map (e.g., `members: { 'uid1': 'admin', 'uid2': 'manager' }`) which explicitly defines which users have what role for that specific property. To support atomic operations and prevent the need for `get()` calls in security rules, this `members` map is further denormalized as `propertyMembers` into every document in its subcollections (`ConstructionExpense`, `RentalIncome`, `MaintenanceExpense`). This means a `ConstructionExpense` document, for instance, will contain `propertyMembers` directly, allowing security rules to authorize access solely based on the document's own data and `request.auth.uid`, making rules simple and performant.\n\n**Querying for Authorized Properties (QAPs):** For `list` operations, this denormalization strategy enables efficient and secure queries. Users can directly query the `/properties` collection with a `where()` clause, such as `db.collection('properties').where('members.' + request.auth.uid, 'in', ['admin', 'manager', 'viewer'])`. This allows Firestore to efficiently filter documents where the authenticated user is listed in the `members` map, ensuring that rules are not used as filters (QAPs).\n\n**Structural Segregation** is maintained by creating dedicated top-level collections for global roles (e.g., `/roles_admin`, `/roles_accountant`, `/roles_viewer`). These collections store the `uid` of users possessing these global roles, enabling easy existence checks in security rules. All documents within a collection, such as `/properties/{propertyId}/constructionExpenses`, share the same security posture, as their authorization is consistently derived from the denormalized `propertyMembers` map within each document. This homogeneity simplifies security rules significantly.\n\n**Hierarchical Paths** (`/properties/{propertyId}/constructionExpenses/{expenseId}`) are utilized for entities that are strongly related to a parent `Property`, making the data organization logical and access control intuitive. The wildcards (`{propertyId}`, `{expenseId}`, etc.) are descriptive, improving data clarity and predictability. This comprehensive approach minimizes complexity, enhances security rule robustness, and ensures a scalable and maintainable Firestore database for Property Pulse."
+  }
+}
