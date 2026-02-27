@@ -1,19 +1,9 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Development-friendly rules: allow all authenticated users
-    // We explicitly match the collection and its documents to ensure all operations (get, list, write) are permitted.
+    // Development-friendly rules: allow all authenticated users to read and write to all collections.
+    // This resolves permission issues during initial setup and testing.
     
-    match /finished_properties/{propertyId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /finished_properties {
-      allow list: if request.auth != null;
-    }
-
-    // General fallback for all other collections
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

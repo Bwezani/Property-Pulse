@@ -87,7 +87,7 @@ export const columns: ColumnDef<Property>[] = [
         <Link href={`/dashboard/properties/${property.id}`} className="flex items-center gap-3 group">
           <Image
             src={image!.imageUrl}
-            alt={property.name}
+            alt={property.name || 'Property Image'}
             width={40}
             height={40}
             className="rounded-md object-cover"

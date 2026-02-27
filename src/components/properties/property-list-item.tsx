@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,9 +21,9 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
         <div className="relative h-48 w-full">
           <Image
             src={image!.imageUrl}
-            alt={property.name}
-            layout="fill"
-            objectFit="cover"
+            alt={property.name || 'Property Image'}
+            fill
+            className="object-cover"
             data-ai-hint={image!.imageHint}
           />
         </div>
