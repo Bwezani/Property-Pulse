@@ -10,6 +10,20 @@
       },
       "required": ["id", "name"]
     },
+    "PropertyUnit": {
+      "title": "PropertyUnit",
+      "type": "object",
+      "description": "Details for a specific unit within a multi-unit property.",
+      "properties": {
+        "id": { "type": "string" },
+        "unitName": { "type": "string" },
+        "status": { "type": "string", "enum": ["Occupied", "Vacant"] },
+        "monthlyRent": { "type": "number" },
+        "paymentDueDay": { "type": "number" },
+        "tenantName": { "type": "string" },
+        "tenantContact": { "type": "string" }
+      }
+    },
     "Property": {
       "title": "Property",
       "type": "object",
@@ -18,19 +32,23 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "code": { "type": "string" },
-        "categoryId": { "type": "string", "description": "ID of the category (e.g., stand-alone, apartment)" },
+        "categoryId": { "type": "string" },
         "location": { "type": "string" },
         "size": { "type": "string" },
         "description": { "type": "string" },
         "type": { "type": "string", "enum": ["Finished", "Under Construction"] },
         "status": { "type": "string", "enum": ["Occupied", "Vacant"] },
         "monthlyRent": { "type": "number" },
-        "paymentDueDay": { "type": "number", "description": "Day of the month rent is due (1-31)" },
+        "paymentDueDay": { "type": "number" },
         "totalInvestment": { "type": "number" },
         "units": { "type": "number", "description": "Number of units for multi-unit properties" },
+        "unitsList": {
+          "type": "array",
+          "items": { "$ref": "#/backend/entities/PropertyUnit" }
+        },
         "constructionStage": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "members": { "type": "object", "description": "Map of user IDs to roles for access control" },
+        "members": { "type": "object" },
         "tenantName": { "type": "string" },
         "tenantContact": { "type": "string" }
       },
@@ -54,11 +72,13 @@
       "type": "object",
       "properties": {
         "propertyId": { "type": "string" },
+        "unitId": { "type": "string" },
+        "unitName": { "type": "string" },
         "tenantName": { "type": "string" },
         "amount": { "type": "number" },
         "paymentDate": { "type": "string", "format": "date-time" },
         "status": { "type": "string", "enum": ["Paid", "Pending", "Overdue"] },
-        "monthKey": { "type": "string", "description": "Identifier for the month (YYYY-MM)" },
+        "monthKey": { "type": "string" },
         "paymentMethod": { "type": "string" }
       }
     }

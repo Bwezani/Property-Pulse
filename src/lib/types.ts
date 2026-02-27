@@ -3,6 +3,16 @@ export type PropertyCategory = {
   name: string;
 };
 
+export type PropertyUnit = {
+  id: string;
+  unitName: string;
+  status: 'Occupied' | 'Vacant';
+  tenantName: string;
+  tenantContact: string;
+  monthlyRent: number;
+  paymentDueDay: number;
+};
+
 export type Property = {
   id: string;
   name: string;
@@ -19,12 +29,13 @@ export type Property = {
 
   // Fields for Finished Properties
   totalInvestment: number;
-  status: 'Occupied' | 'Vacant';
+  status: 'Occupied' | 'Vacant'; // For single unit properties
   monthlyRent: number;
   paymentDueDay: number;
   tenantName: string;
   tenantContact: string;
-  units?: number; // Added for multi-unit support
+  units?: number; // Total count
+  unitsList?: PropertyUnit[]; // Granular details for multi-unit
 
   // Fields for Under Construction Properties
   constructionStage: 'Planning' | 'Foundation' | 'Framing' | 'Roofing' | 'Finishing' | 'Completed';
@@ -57,6 +68,7 @@ export type ConstructionExpense = {
 export type RentalIncome = {
   id: string;
   propertyId: string;
+  unitId?: string; // Track which unit the rent is for
   tenantName: string;
   amount: number;
   paymentDate: string; // ISO date string

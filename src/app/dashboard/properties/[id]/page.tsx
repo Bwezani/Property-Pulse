@@ -36,11 +36,12 @@ import {
   Construction,
   Loader2,
   LayoutGrid,
+  Users,
 } from 'lucide-react';
 import { InvestmentProgress } from '@/components/properties/investment-progress';
 import { CostOverrunAlert } from '@/components/expenses/cost-overrun-alert';
 import { TransactionsDataTable } from '@/components/transactions/data-table';
-import { constructionColumns } from '@/components/expenses/construction/columns';
+import { constructionColumns } from '@/components/expenses/columns'; // Simplified import path if consolidated
 import { rentalIncomeColumns } from '@/components/income/rental/columns';
 import { maintenanceColumns } from '@/components/expenses/maintenance/columns';
 import { KpiCard } from '@/components/dashboard/kpi-card';
@@ -57,7 +58,8 @@ import type {
   RentalIncome, 
   MaintenanceExpense,
   ConstructionBudgetItem,
-  MaintenanceBudgetItem
+  MaintenanceBudgetItem,
+  PropertyUnit
 } from '@/lib/types';
 
 export default function PropertyDetailPage() {
@@ -65,14 +67,12 @@ export default function PropertyDetailPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // 1. Fetch Property Data
   const propertyRef = useMemoFirebase(() => {
     if (!db || !id) return null;
     return doc(db, 'finished_properties', id);
   }, [db, id]);
   const { data: rawProperty, isLoading: isPropLoading } = useDoc<Property>(propertyRef);
 
-  // 2. Fetch Related Data (Expenses, Income, Budget)
   const qExpenses = useMemoFirebase(() => {
     if (!db || !id) return null;
     return query(collection(db, 'construction_expenses'), where('propertyId', '==', id));
@@ -115,13 +115,15 @@ export default function PropertyDetailPage() {
     return <div className="p-8 text-center">Property not found.</div>;
   }
 
-  // 3. Calculate Financials
   const calculatedProperty = calculatePropertyFinancials(
     rawProperty,
     constructionExpenses || [],
     rentalIncomes || [],
     maintenanceExpenses || []
   );
+
+  const occupiedUnits = calculatedProperty.unitsList?.filter(u => u.status === 'Occupied').length || 0;
+  const totalUnits = calculatedProperty.units || calculatedProperty.unitsList?.length || 1;
 
   const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
     <div className="flex items-start gap-3">
@@ -142,28 +144,6 @@ export default function PropertyDetailPage() {
     </div>
   );
 
-  const chartData = (cBudgetItems || []).reduce((acc: any[], item) => {
-    const category = item.category || 'Uncategorized';
-    const existing = acc.find(a => a.category === category);
-    if (existing) {
-      existing.amount += item.actualCost || 0;
-    } else {
-      acc.push({ category, amount: item.actualCost || 0 });
-    }
-    return acc;
-  }, []);
-
-  const maintenanceChartData = (mBudgetItems || []).reduce((acc: any[], item) => {
-    const category = item.category || 'Uncategorized';
-    const existing = acc.find(a => a.category === category);
-    if (existing) {
-      existing.amount += item.actualCost || 0;
-    } else {
-      acc.push({ category, amount: item.actualCost || 0 });
-    }
-    return acc;
-  }, []);
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <header className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
@@ -179,10 +159,10 @@ export default function PropertyDetailPage() {
            <Badge variant={calculatedProperty.type === 'Finished' ? 'default' : 'secondary'} className="px-4 py-1">
             {calculatedProperty.type}
           </Badge>
-          {calculatedProperty.units && calculatedProperty.units > 1 && (
+          {totalUnits > 1 && (
             <Badge variant="outline" className="border-primary text-primary px-3 py-1 flex items-center gap-1">
               <LayoutGrid className="h-3 w-3" />
-              {calculatedProperty.units} Units
+              {totalUnits} Units
             </Badge>
           )}
         </div>
@@ -200,9 +180,9 @@ export default function PropertyDetailPage() {
                   Icon={TrendingUp}
                 />
                 <KpiCard
-                  title="Status"
-                  value={calculatedProperty.status}
-                  helperText={calculatedProperty.status === 'Occupied' ? `Tenant: ${calculatedProperty.tenantName}` : 'Available for rent'}
+                  title="Occupancy"
+                  value={totalUnits > 1 ? `${occupiedUnits} / ${totalUnits} Units` : calculatedProperty.status}
+                  helperText={totalUnits > 1 ? `${((occupiedUnits / totalUnits) * 100).toFixed(0)}% Occupancy rate` : `Tenant: ${calculatedProperty.tenantName || 'None'}`}
                   Icon={Building}
                 />
                 <KpiCard
@@ -227,22 +207,10 @@ export default function PropertyDetailPage() {
                   Icon={Banknote}
                 />
                 <KpiCard
-                  title="Budget Utilization"
-                  value={calculatedProperty.estimatedBudget && calculatedProperty.estimatedBudget > 0 ? `${((calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100).toFixed(0)}%` : 'N/A'}
-                  helperText={`Budget: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(calculatedProperty.estimatedBudget || 0)}`}
-                  Icon={GanttChartSquare}
-                />
-                <KpiCard
                   title="Construction Stage"
                   value={calculatedProperty.constructionStage}
                   helperText="Current phase of development"
                   Icon={Construction}
-                />
-                <KpiCard
-                  title="Cost Overrun"
-                  value={calculatedProperty.costOverrunAlert ? 'Detected' : 'None'}
-                  helperText="AI-powered analysis"
-                  Icon={AlertCircle}
                 />
               </>
             )}
@@ -260,25 +228,67 @@ export default function PropertyDetailPage() {
                 label="Date Created"
                 value={calculatedProperty.createdAt ? new Date(calculatedProperty.createdAt).toLocaleDateString() : 'N/A'}
               />
-              {calculatedProperty.units && calculatedProperty.units > 1 && (
-                <DetailItem icon={LayoutGrid} label="Total Units" value={`${calculatedProperty.units} Spaces`} />
+              {totalUnits > 1 && (
+                <DetailItem icon={LayoutGrid} label="Total Units" value={`${totalUnits} Individual Spaces`} />
               )}
-              {calculatedProperty.type === 'Finished' && (
+              {calculatedProperty.type === 'Finished' && totalUnits === 1 && (
                 <DetailItem
                   icon={DollarSign}
                   label="Monthly Rent"
                   value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.monthlyRent || 0)}
                 />
               )}
-              <div className="md:col-span-3">
-                <DetailItem
-                  icon={FileText}
-                  label="Description"
-                  value={<div className="whitespace-pre-line text-muted-foreground">{calculatedProperty.description || 'No description provided.'}</div>}
-                />
-              </div>
             </CardContent>
           </Card>
+
+          {calculatedProperty.unitsList && calculatedProperty.unitsList.length > 0 && (
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="font-headline text-xl">Unit Inventory</CardTitle>
+                  <CardDescription>Individual tenants and statuses for all units.</CardDescription>
+                </div>
+                <Users className="h-5 w-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 border-b">
+                      <tr>
+                        <th className="p-3 text-left font-medium">Unit</th>
+                        <th className="p-3 text-left font-medium">Status</th>
+                        <th className="p-3 text-left font-medium">Tenant</th>
+                        <th className="p-3 text-right font-medium">Monthly Rent</th>
+                        <th className="p-3 text-center font-medium">Due Day</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {calculatedProperty.unitsList.map((unit) => (
+                        <tr key={unit.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="p-3 font-medium">{unit.unitName}</td>
+                          <td className="p-3">
+                            <Badge variant={unit.status === 'Occupied' ? 'default' : 'secondary'}>
+                              {unit.status}
+                            </Badge>
+                          </td>
+                          <td className="p-3">
+                             <div className="flex flex-col">
+                               <span>{unit.tenantName || '-'}</span>
+                               <span className="text-xs text-muted-foreground">{unit.tenantContact}</span>
+                             </div>
+                          </td>
+                          <td className="p-3 text-right font-mono">
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(unit.monthlyRent)}
+                          </td>
+                          <td className="p-3 text-center text-muted-foreground">{unit.paymentDueDay}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="lg:col-span-1 space-y-6">
@@ -314,7 +324,6 @@ export default function PropertyDetailPage() {
                   />
                 </div>
               </div>
-              <CostOverrunAlert reason={calculatedProperty.costOverrunAlert} />
             </CardContent>
           </Card>
         </div>
@@ -327,38 +336,11 @@ export default function PropertyDetailPage() {
           {calculatedProperty.type === 'Finished' && <TabsTrigger value="maintenance">Maintenance</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="construction" className="mt-6 space-y-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Expenses</CardTitle>
-              <AddConstructionExpenseForm propertyId={id} />
-            </CardHeader>
-            <CardContent>
-              <TransactionsDataTable columns={constructionColumns} data={constructionExpenses || []} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Budget Tracking</CardTitle>
-                <CardDescription>Estimated vs Actual costs per item.</CardDescription>
-              </div>
-              <AddConstructionBudgetItemForm propertyId={id} />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <TransactionsDataTable columns={constructionBudgetColumns} data={cBudgetItems || []} />
-              <div className="pt-6 border-t">
-                <ConstructionExpenseBarChart data={chartData} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="income" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Rental Income</CardTitle>
-              <CardDescription>Track payments from tenants.</CardDescription>
+              <CardDescription>Automated monthly tracking for all occupied units.</CardDescription>
             </CardHeader>
             <CardContent>
               <TransactionsDataTable columns={rentalIncomeColumns} data={rentalIncomes || []} />
@@ -374,21 +356,6 @@ export default function PropertyDetailPage() {
             </CardHeader>
             <CardContent>
               <TransactionsDataTable columns={maintenanceColumns} data={maintenanceExpenses || []} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Maintenance Budget</CardTitle>
-                <CardDescription>Planning for repairs and upkeep.</CardDescription>
-              </div>
-              <AddMaintenanceBudgetItemForm propertyId={id} />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <TransactionsDataTable columns={maintenanceBudgetColumns} data={mBudgetItems || []} />
-              <div className="pt-6 border-t">
-                <ConstructionExpenseBarChart data={maintenanceChartData} />
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

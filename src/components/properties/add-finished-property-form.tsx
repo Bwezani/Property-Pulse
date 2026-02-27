@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -32,10 +32,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PlusCircle, Info, Building2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { PlusCircle, Info, Building2, User, Home, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+
+const unitSchema = z.object({
+  unitName: z.string().min(1, 'Unit name/number is required.'),
+  status: z.enum(['Occupied', 'Vacant']),
+  monthlyRent: z.coerce.number().min(0, 'Rent cannot be negative.'),
+  paymentDueDay: z.coerce.number().min(1).max(31),
+  tenantName: z.string().optional(),
+  tenantContact: z.string().optional(),
+});
 
 const formSchema = z
   .object({
@@ -46,42 +56,14 @@ const formSchema = z
     totalInvestment: z.coerce
       .number()
       .min(0.01, 'Total investment must be greater than 0.'),
-    status: z.enum(['Occupied', 'Vacant'], {
-      required_error: 'Status is required.',
-    }),
-    monthlyRent: z.coerce.number().min(0, 'Monthly rent cannot be negative.'),
-    paymentDueDay: z.coerce
-      .number()
-      .min(1, 'Payment day must be between 1 and 31.')
-      .max(31, 'Payment day must be between 1 and 31.'),
+    units: z.coerce.number().min(1, 'Units must be at least 1.').default(1),
+    unitsList: z.array(unitSchema),
+    // Fallback fields for single unit properties
+    status: z.enum(['Occupied', 'Vacant']).optional(),
+    monthlyRent: z.coerce.number().optional(),
+    paymentDueDay: z.coerce.number().optional(),
     tenantName: z.string().optional(),
     tenantContact: z.string().optional(),
-    units: z.coerce.number().min(1, 'Units must be at least 1.').default(1),
-  })
-  .superRefine((data, ctx) => {
-    if (data.status === 'Occupied') {
-      if (!data.tenantName || data.tenantName.trim().length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['tenantName'],
-          message: 'Tenant name is required for occupied properties.',
-        });
-      }
-      if (!data.tenantContact || data.tenantContact.trim().length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['tenantContact'],
-          message: 'Tenant contact is required for occupied properties.',
-        });
-      }
-      if (data.monthlyRent <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['monthlyRent'],
-          message: 'Monthly rent must be greater than 0 for occupied properties.',
-        });
-      }
-    }
   });
 
 type FinishedPropertyFormValues = z.infer<typeof formSchema>;
@@ -111,18 +93,45 @@ export function AddFinishedPropertyForm() {
       location: '',
       size: '',
       totalInvestment: 0,
+      units: 1,
+      unitsList: [{ unitName: 'Main Unit', status: 'Occupied', monthlyRent: 0, paymentDueDay: 1, tenantName: '', tenantContact: '' }],
       status: 'Occupied',
       monthlyRent: 0,
       paymentDueDay: 1,
-      tenantName: '',
-      tenantContact: '',
-      units: 1,
     },
   });
 
+  const { fields, append, remove, replace } = useFieldArray({
+    control: form.control,
+    name: 'unitsList',
+  });
+
   const categoryId = form.watch('categoryId');
-  const status = form.watch('status');
+  const unitsCount = form.watch('units');
   const isMultiUnit = MULTI_UNIT_CATEGORIES.includes(categoryId);
+
+  // Sync unitsList with units count when multi-unit is active
+  useEffect(() => {
+    if (isMultiUnit) {
+      const currentCount = fields.length;
+      if (unitsCount > currentCount) {
+        for (let i = currentCount; i < unitsCount; i++) {
+          append({
+            unitName: `Unit ${i + 1}`,
+            status: 'Vacant',
+            monthlyRent: 0,
+            paymentDueDay: 1,
+            tenantName: '',
+            tenantContact: '',
+          });
+        }
+      } else if (unitsCount < currentCount && unitsCount >= 0) {
+        for (let i = currentCount; i > unitsCount; i--) {
+          remove(i - 1);
+        }
+      }
+    }
+  }, [unitsCount, isMultiUnit, append, remove, fields.length]);
 
   const onSubmit = async (values: FinishedPropertyFormValues) => {
     if (!db || !user) {
@@ -135,8 +144,18 @@ export function AddFinishedPropertyForm() {
     }
 
     try {
-      const isOccupied = values.status === 'Occupied';
-      
+      const finalUnitsList = isMultiUnit 
+        ? values.unitsList 
+        : [{
+            id: 'unit-1',
+            unitName: 'Main Unit',
+            status: values.status || 'Vacant',
+            monthlyRent: values.monthlyRent || 0,
+            paymentDueDay: values.paymentDueDay || 1,
+            tenantName: values.tenantName || '',
+            tenantContact: values.tenantContact || '',
+          }];
+
       await addDoc(collection(db, 'finished_properties'), {
         name: values.name,
         code: `FP-${Date.now().toString().slice(-6)}`,
@@ -147,15 +166,17 @@ export function AddFinishedPropertyForm() {
         type: 'Finished',
         imageId: 'default-img',
         totalInvestment: values.totalInvestment,
-        status: values.status,
-        monthlyRent: isOccupied ? values.monthlyRent : 0,
-        paymentDueDay: isOccupied ? values.paymentDueDay : 0,
-        tenantName: isOccupied ? (values.tenantName || '') : '',
-        tenantContact: isOccupied ? (values.tenantContact || '') : '',
-        units: values.units,
+        units: isMultiUnit ? values.units : 1,
+        unitsList: finalUnitsList.map((u, i) => ({ ...u, id: `unit-${i + 1}-${Date.now()}` })),
         createdAt: new Date().toISOString(),
         isDeleted: false,
         members: { [user.uid]: 'admin' },
+        // Legacy fields for backward compatibility/simplicity in single unit
+        status: !isMultiUnit ? values.status : 'Occupied',
+        monthlyRent: !isMultiUnit ? values.monthlyRent : 0,
+        paymentDueDay: !isMultiUnit ? values.paymentDueDay : 1,
+        tenantName: !isMultiUnit ? values.tenantName : '',
+        tenantContact: !isMultiUnit ? values.tenantContact : '',
         totalConstructionCost: 0,
         totalRentReceived: 0,
         totalMaintenanceCost: 0,
@@ -166,7 +187,7 @@ export function AddFinishedPropertyForm() {
 
       toast({
         title: 'Property Added',
-        description: 'The finished property has been successfully added.',
+        description: 'The property and its units have been successfully added.',
       });
       form.reset();
       setOpen(false);
@@ -188,183 +209,30 @@ export function AddFinishedPropertyForm() {
           Add Finished Property
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
             Add Finished Property
           </DialogTitle>
           <DialogDescription>
-            Enter the details for the new finished property. Multi-unit properties will require extra details.
+            Enter details for your property. For multi-unit buildings, you can manage each unit's tenant and rent separately.
           </DialogDescription>
         </DialogHeader>
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Property Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Greenwood Villa" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {CATEGORIES.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {isMultiUnit && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <Alert variant="default" className="bg-primary/5 border-primary/20">
-                  <Info className="h-4 w-4 text-primary" />
-                  <AlertTitle className="text-primary font-semibold">Multi-Unit Property Detected</AlertTitle>
-                  <AlertDescription className="text-primary/80">
-                    This category usually implies multiple individual units (e.g., separate apartments in a building). Please specify the total number of units below.
-                  </AlertDescription>
-                </Alert>
-                <FormField
-                  control={form.control}
-                  name="units"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Total Number of Units</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={1} {...field} />
-                      </FormControl>
-                      <FormDescription>How many separate rentable spaces are in this property?</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-            
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Maple Creek, Suburbia" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="size"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Overall Size</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 12-unit building or 2400 sqft" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="totalInvestment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Total Investment Cost</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g. 500000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Occupancy Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Occupied">Occupied</SelectItem>
-                        <SelectItem value="Vacant">Vacant</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="paymentDueDay"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rent Payment Due Day (1-31)</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={1} max={31} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {status === 'Occupied' && (
-              <div className="space-y-4 border-t pt-4 mt-4 bg-muted/20 p-4 rounded-lg animate-in fade-in duration-300">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  Primary Tenant Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 p-6">
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="tenantName"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tenant Name</FormLabel>
+                        <FormLabel>Property Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. John Doe" {...field} />
+                          <Input placeholder="e.g. Greenwood Villa" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -372,41 +240,279 @@ export function AddFinishedPropertyForm() {
                   />
                   <FormField
                     control={form.control}
-                    name="tenantContact"
+                    name="categoryId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tenant Contact</FormLabel>
+                        <FormLabel>Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CATEGORIES.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. 0977 000 000" {...field} />
+                          <Input placeholder="e.g. Lusaka, Zambia" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="totalInvestment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Investment Cost</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 500000" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="monthlyRent"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Monthly Rent Amount (Total)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g. 10000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
 
-            <DialogFooter className="pt-4 border-t">
-              <Button
-                type="submit"
-                className="w-full md:w-auto font-bold"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? 'Adding...' : 'Add Property'}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="size"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Overall Size</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 2400 sqft" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {isMultiUnit && (
+                    <FormField
+                      control={form.control}
+                      name="units"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total Number of Units</FormLabel>
+                          <FormControl>
+                            <Input type="number" min={1} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+
+                {isMultiUnit ? (
+                  <div className="space-y-6 pt-4 border-t">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Home className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-semibold">Unit Details</h3>
+                    </div>
+                    <Alert className="bg-primary/5 border-primary/20">
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>Managing {unitsCount} Units</AlertTitle>
+                      <AlertDescription>
+                        Each unit has its own occupancy status, tenant, and monthly rent details.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <div className="grid gap-6">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="p-4 border rounded-lg bg-card space-y-4 shadow-sm">
+                          <div className="flex items-center justify-between border-b pb-2">
+                             <h4 className="font-medium text-sm">Unit #{index + 1} Configuration</h4>
+                             {index > 0 && (
+                               <Button variant="ghost" size="sm" className="h-8 text-destructive" onClick={() => remove(index)}>
+                                 <Trash2 className="h-4 w-4" />
+                               </Button>
+                             )}
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <FormField
+                              control={form.control}
+                              name={`unitsList.${index}.unitName`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Unit Name/No.</FormLabel>
+                                  <FormControl><Input {...field} /></FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`unitsList.${index}.status`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Status</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger><SelectValue /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="Occupied">Occupied</SelectItem>
+                                      <SelectItem value="Vacant">Vacant</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`unitsList.${index}.monthlyRent`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Monthly Rent</FormLabel>
+                                  <FormControl><Input type="number" {...field} /></FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {form.watch(`unitsList.${index}.status`) === 'Occupied' && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-muted/30 rounded-md animate-in fade-in duration-200">
+                               <FormField
+                                control={form.control}
+                                name={`unitsList.${index}.tenantName`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Tenant Name</FormLabel>
+                                    <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                               <FormField
+                                control={form.control}
+                                name={`unitsList.${index}.tenantContact`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Contact</FormLabel>
+                                    <FormControl><Input placeholder="097..." {...field} /></FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                               <FormField
+                                control={form.control}
+                                name={`unitsList.${index}.paymentDueDay`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Due Day (1-31)</FormLabel>
+                                    <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6 pt-4 border-t">
+                    <div className="flex items-center gap-2 mb-4">
+                      <User className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-semibold">Occupancy & Tenant</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Current Status</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Occupied">Occupied</SelectItem>
+                                <SelectItem value="Vacant">Vacant</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="monthlyRent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Monthly Rent</FormLabel>
+                            <FormControl><Input type="number" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="paymentDueDay"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Rent Due Day (1-31)</FormLabel>
+                            <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {form.watch('status') === 'Occupied' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg animate-in fade-in duration-200">
+                        <FormField
+                          control={form.control}
+                          name="tenantName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tenant Name</FormLabel>
+                              <FormControl><Input placeholder="Full Name" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="tenantContact"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tenant Contact</FormLabel>
+                              <FormControl><Input placeholder="Phone or Email" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            <DialogFooter className="p-6 border-t bg-card">
+              <Button type="submit" className="w-full md:w-auto font-bold" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Adding Property...' : 'Save Property'}
               </Button>
             </DialogFooter>
           </form>
