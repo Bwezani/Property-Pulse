@@ -20,7 +20,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,7 +100,7 @@ export function AddFinishedPropertyForm() {
     },
   });
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'unitsList',
   });
@@ -209,8 +208,8 @@ export function AddFinishedPropertyForm() {
           Add Finished Property
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
             Add Finished Property
@@ -221,9 +220,9 @@ export function AddFinishedPropertyForm() {
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 p-6">
-              <div className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+            <ScrollArea className="flex-1">
+              <div className="p-6 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
