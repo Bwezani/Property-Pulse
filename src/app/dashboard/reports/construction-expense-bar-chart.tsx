@@ -32,7 +32,11 @@ export function ConstructionExpenseBarChart({ data }: Props) {
           <XAxis dataKey="category" />
           <YAxis />
           <Tooltip />
-          <Bar dataKey="amount" />
+          <Bar
+  dataKey="amount"
+  fill="hsl(var(--chart-1))"
+  radius={[8, 8, 0, 0]}
+/>
         </BarChart>
       </ResponsiveContainer>
     </div>
