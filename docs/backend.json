@@ -1,9 +1,10 @@
+
 {
   "entities": {
     "Category": {
       "title": "Category",
       "type": "object",
-      "description": "Represents a classification for properties (e.g., Residential, Commercial).",
+      "description": "Represents a classification for properties (e.g., Stand Alone, Apartment, Flat).",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" }
@@ -18,7 +19,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "code": { "type": "string" },
-        "categoryId": { "type": "string" },
+        "categoryId": { "type": "string", "description": "ID of the category (e.g., stand-alone, apartment)" },
         "location": { "type": "string" },
         "size": { "type": "string" },
         "description": { "type": "string" },
@@ -33,7 +34,7 @@
         "tenantName": { "type": "string" },
         "tenantContact": { "type": "string" }
       },
-      "required": ["name", "code", "location", "type", "createdAt", "members"]
+      "required": ["name", "code", "location", "type", "createdAt", "members", "categoryId"]
     },
     "ConstructionExpense": {
       "title": "ConstructionExpense",
@@ -79,18 +80,6 @@
     "/rental_incomes/{incomeId}": {
       "schema": { "$ref": "#/backend/entities/RentalIncome" },
       "description": "Rental income records."
-    },
-    "/maintenance_expenses/{expenseId}": {
-      "schema": { "type": "object" },
-      "description": "Maintenance records."
-    },
-    "/construction_budget_items/{itemId}": {
-      "schema": { "type": "object" },
-      "description": "Budget line items for construction."
-    },
-    "/maintenance_budget_items/{itemId}": {
-      "schema": { "type": "object" },
-      "description": "Budget line items for maintenance."
     }
   }
 }

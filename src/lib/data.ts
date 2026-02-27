@@ -1,3 +1,4 @@
+
 import type {
   Property,
   PropertyCategory,
@@ -7,12 +8,15 @@ import type {
   ConstructionBudgetItem,
   MaintenanceBudgetItem,
 } from './types';
-import { PlaceHolderImagesMap } from './placeholder-images';
 
 let categories: PropertyCategory[] = [
-  { id: 'cat-1', name: 'Residential' },
-  { id: 'cat-2', name: 'Commercial' },
-  { id: 'cat-3', name: 'Mixed-Use' },
+  { id: 'stand-alone', name: 'Stand Alone' },
+  { id: 'apartment', name: 'Apartment' },
+  { id: 'flat', name: 'Flat' },
+  { id: 'bedsit', name: 'Bedsit' },
+  { id: 'commercial', name: 'Commercial Space' },
+  { id: 'warehouse', name: 'Warehouse' },
+  { id: 'other', name: 'Other' },
 ];
 
 let properties: Property[] = [
@@ -20,7 +24,7 @@ let properties: Property[] = [
     id: 'prop-1',
     name: 'Greenwood Villa',
     code: 'GWV-001',
-    categoryId: 'cat-1',
+    categoryId: 'stand-alone',
     location: 'Maple Creek, Suburbia',
     size: '2400 sqft',
     description: 'A spacious family home with a modern design and a large backyard.',
@@ -28,6 +32,7 @@ let properties: Property[] = [
     imageId: 'prop-1-img',
     createdAt: '2022-08-15T10:00:00Z',
     isDeleted: false,
+    members: {},
     totalInvestment: 250000,
     status: 'Occupied',
     monthlyRent: 2200,
@@ -46,7 +51,7 @@ let properties: Property[] = [
     id: 'prop-2',
     name: 'Oakside Apartments',
     code: 'OKA-002',
-    categoryId: 'cat-1',
+    categoryId: 'apartment',
     location: 'Downtown, Metro City',
     size: '12-unit building',
     description: 'Modern apartment building in the heart of the city.',
@@ -54,6 +59,7 @@ let properties: Property[] = [
     imageId: 'prop-2-img',
     createdAt: '2023-05-20T14:30:00Z',
     isDeleted: false,
+    members: {},
     totalInvestment: 0,
     status: 'Vacant',
     monthlyRent: 0,
@@ -73,7 +79,7 @@ let properties: Property[] = [
     id: 'prop-3',
     name: 'The Commerce Hub',
     code: 'TCH-001',
-    categoryId: 'cat-2',
+    categoryId: 'commercial',
     location: 'Business District, Metro City',
     size: '5000 sqft Office Space',
     description: 'Prime commercial property with high foot traffic.',
@@ -81,6 +87,7 @@ let properties: Property[] = [
     imageId: 'prop-3-img',
     createdAt: '2021-11-01T09:00:00Z',
     isDeleted: false,
+    members: {},
     totalInvestment: 750000,
     status: 'Occupied',
     monthlyRent: 8000,
@@ -97,100 +104,11 @@ let properties: Property[] = [
     costOverrunAlert:
       'Overrun detected due to "unexpected repair" on the HVAC system, increasing maintenance costs.',
   },
-  {
-    id: 'prop-4',
-    name: 'Lakeside Retail',
-    code: 'LKR-004',
-    categoryId: 'cat-2',
-    location: 'Lakeside View',
-    size: 'Complex of 5 retail shops',
-    description: 'A new retail complex under development with scenic lake views.',
-    type: 'Under Construction',
-    imageId: 'prop-4-img',
-    createdAt: '2024-01-10T11:00:00Z',
-    isDeleted: false,
-    totalInvestment: 0,
-    status: 'Vacant',
-    monthlyRent: 0,
-    paymentDueDay: 0,
-    tenantName: '',
-    tenantContact: '',
-    constructionStage: 'Foundation',
-    estimatedBudget: 850000,
-    totalConstructionCost: 0,
-    totalRentReceived: 0,
-    totalMaintenanceCost: 0,
-    remainingInvestment: 0,
-    totalProfit: 0,
-    netProfit: 0,
-  },
-  {
-    id: 'prop-5',
-    name: 'Cedar Heights',
-    code: 'CDH-005',
-    categoryId: 'cat-1',
-    location: 'Hilltop, Suburbia',
-    size: '1800 sqft',
-    description: 'Cozy home with a rustic charm and city views. Investment recovery is complete.',
-    type: 'Finished',
-    imageId: 'prop-5-img',
-    createdAt: '2020-02-20T16:00:00Z',
-    isDeleted: false,
-    totalInvestment: 180000,
-    status: 'Occupied',
-    monthlyRent: 1600,
-    paymentDueDay: 1,
-    tenantName: 'Jane Smith',
-    tenantContact: 'jane.s@email.com',
-    constructionStage: 'Completed',
-    totalConstructionCost: 0,
-    totalRentReceived: 0,
-    totalMaintenanceCost: 0,
-    remainingInvestment: 0,
-    totalProfit: 0,
-    netProfit: 0,
-  },
 ];
 
-let constructionExpenses: ConstructionExpense[] = [
-  // Expenses for Oakside Apartments (prop-2)
-  { id: 'cex-1', propertyId: 'prop-2', itemName: 'Concrete', quantity: 200, unitPrice: 150, totalPrice: 30000, vendor: 'BuildIt Concrete', purchaseDate: '2023-06-01T00:00:00Z' },
-  { id: 'cex-2', propertyId: 'prop-2', itemName: 'Steel Beams', quantity: 50, unitPrice: 500, totalPrice: 25000, vendor: 'MetalWorks Inc.', purchaseDate: '2023-07-10T00:00:00Z' },
-  { id: 'cex-3', propertyId: 'prop-2', itemName: 'Lumber', quantity: 1000, unitPrice: 12, totalPrice: 12000, vendor: 'Timber Co.', purchaseDate: '2023-08-22T00:00:00Z' },
-
-  // Expenses for Lakeside Retail (prop-4)
-  { id: 'cex-4', propertyId: 'prop-4', itemName: 'Foundation Pouring Service', quantity: 1, unitPrice: 45000, totalPrice: 45000, vendor: 'Solid Foundations', purchaseDate: '2024-02-15T00:00:00Z' },
-];
-
-let rentalIncomes: RentalIncome[] = [
-  // Incomes for Greenwood Villa (prop-1)
-  { id: 'rin-1', propertyId: 'prop-1', tenantName: 'John Doe', amount: 2200, paymentDate: '2023-12-01T00:00:00Z', dueDate: '2023-12-01T00:00:00Z', paymentMethod: 'Bank Transfer', status: 'Paid' },
-  { id: 'rin-2', propertyId: 'prop-1', tenantName: 'John Doe', amount: 2200, paymentDate: '2024-01-01T00:00:00Z', dueDate: '2024-01-01T00:00:00Z', paymentMethod: 'Bank Transfer', status: 'Paid' },
-  { id: 'rin-3', propertyId: 'prop-1', tenantName: 'John Doe', amount: 2200, paymentDate: '2024-02-01T00:00:00Z', dueDate: '2024-02-01T00:00:00Z', paymentMethod: 'Bank Transfer', status: 'Paid' },
-
-  // Incomes for The Commerce Hub (prop-3)
-  { id: 'rin-4', propertyId: 'prop-3', tenantName: 'Innovate Corp', amount: 8000, paymentDate: '2024-01-05T00:00:00Z', dueDate: '2024-01-05T00:00:00Z', paymentMethod: 'Bank Transfer', status: 'Paid' },
-  { id: 'rin-5', propertyId: 'prop-3', tenantName: 'Innovate Corp', amount: 8000, paymentDate: '2024-02-05T00:00:00Z', dueDate: '2024-02-05T00:00:00Z', paymentMethod: 'Bank Transfer', status: 'Paid' },
-  
-  // Incomes for Cedar Heights (prop-5) - to show profit
-  ...Array.from({ length: 18 }, (_, i) => ({
-    id: `rin-ch-${i}`,
-    propertyId: 'prop-5',
-    tenantName: 'Jane Smith',
-    amount: 1600,
-    paymentDate: new Date(2022, i, 1).toISOString(),
-    dueDate: new Date(2022, i, 1).toISOString(),
-    paymentMethod: 'Bank Transfer' as const,
-    status: 'Paid' as const,
-  })),
-];
-
-let maintenanceExpenses: MaintenanceExpense[] = [
-  { id: 'mex-1', propertyId: 'prop-1', expenseType: 'Repair', description: 'Leaky faucet fix', amount: 150, date: '2024-01-20T00:00:00Z', vendor: 'Plumb Perfect' },
-  { id: 'mex-2', propertyId: 'prop-3', expenseType: 'Utility', description: 'Monthly electricity bill', amount: 450, date: '2024-02-10T00:00:00Z', vendor: 'City Power' },
-  { id: 'mex-3', propertyId: 'prop-3', expenseType: 'Repair', description: 'Unexpected repair on HVAC system', amount: 1200, date: '2024-02-15T00:00:00Z', vendor: 'Cooling Systems Inc' },
-];
-
+let constructionExpenses: ConstructionExpense[] = [];
+let rentalIncomes: RentalIncome[] = [];
+let maintenanceExpenses: MaintenanceExpense[] = [];
 let constructionBudgetItems: ConstructionBudgetItem[] = [];
 let maintenanceBudgetItems: MaintenanceBudgetItem[] = [];
 

@@ -39,6 +39,7 @@ import { collection, addDoc } from 'firebase/firestore';
 const formSchema = z
   .object({
     name: z.string().min(1, 'Property name is required.'),
+    categoryId: z.string().min(1, 'Category is required.'),
     location: z.string().min(1, 'Location is required.'),
     size: z.string().min(1, 'Size is required.'),
     totalInvestment: z.coerce
@@ -83,6 +84,16 @@ const formSchema = z
 
 type FinishedPropertyFormValues = z.infer<typeof formSchema>;
 
+const CATEGORIES = [
+  { id: 'stand-alone', name: 'Stand Alone' },
+  { id: 'apartment', name: 'Apartment' },
+  { id: 'flat', name: 'Flat' },
+  { id: 'bedsit', name: 'Bedsit' },
+  { id: 'commercial', name: 'Commercial Space' },
+  { id: 'warehouse', name: 'Warehouse' },
+  { id: 'other', name: 'Other' },
+];
+
 export function AddFinishedPropertyForm() {
   const [open, setOpen] = useState(false);
   const db = useFirestore();
@@ -92,6 +103,7 @@ export function AddFinishedPropertyForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      categoryId: '',
       location: '',
       size: '',
       totalInvestment: 0,
@@ -121,7 +133,7 @@ export function AddFinishedPropertyForm() {
       await addDoc(collection(db, 'finished_properties'), {
         name: values.name,
         code: `FP-${Date.now().toString().slice(-6)}`,
-        categoryId: 'cat-1',
+        categoryId: values.categoryId,
         location: values.location,
         size: values.size,
         description: '',
@@ -177,19 +189,49 @@ export function AddFinishedPropertyForm() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Property Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Greenwood Villa" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Property Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Greenwood Villa" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <FormField
               control={form.control}
               name="location"
@@ -203,32 +245,35 @@ export function AddFinishedPropertyForm() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="size"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Size</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 3-bedroom, 2400 sqft" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="totalInvestment"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Investment Cost</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g. 500000" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="size"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Size</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 3-bedroom, 2400 sqft" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="totalInvestment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Total Investment Cost</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g. 500000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -259,7 +304,7 @@ export function AddFinishedPropertyForm() {
                 name="paymentDueDay"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Payment Due Day</FormLabel>
+                    <FormLabel>Rent Payment Due Day (1-31)</FormLabel>
                     <FormControl>
                       <Input type="number" min={1} max={31} {...field} />
                     </FormControl>
@@ -270,28 +315,44 @@ export function AddFinishedPropertyForm() {
             </div>
 
             {status === 'Occupied' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4 border-t pt-4 mt-4">
+                <h3 className="text-sm font-semibold">Tenant Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="tenantName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tenant Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tenantContact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tenant Contact</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 0977 000 000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
-                  name="tenantName"
+                  name="monthlyRent"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tenant Name</FormLabel>
+                      <FormLabel>Monthly Rent Amount</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tenantContact"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tenant Contact</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. 0977 000 000" {...field} />
+                        <Input type="number" placeholder="e.g. 10000" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -300,23 +361,10 @@ export function AddFinishedPropertyForm() {
               </div>
             )}
 
-            <FormField
-              control={form.control}
-              name="monthlyRent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monthly Rent Amount</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g. 10000" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <DialogFooter>
               <Button
                 type="submit"
+                className="w-full md:w-auto"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting ? 'Adding...' : 'Add Property'}
