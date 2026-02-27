@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Property } from '@/lib/types';
 import { PlaceHolderImagesMap } from '@/lib/placeholder-images';
 import { InvestmentProgress } from './investment-progress';
+import { LayoutGrid } from 'lucide-react';
 
 interface PropertyListItemProps {
   property: Property;
@@ -26,6 +27,14 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
             className="object-cover"
             data-ai-hint={image!.imageHint}
           />
+          {property.units && property.units > 1 && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm text-foreground flex items-center gap-1 shadow-sm">
+                <LayoutGrid className="h-3 w-3" />
+                {property.units} Units
+              </Badge>
+            </div>
+          )}
         </div>
       </Link>
       <CardHeader>

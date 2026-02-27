@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -21,6 +20,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlusCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { PlusCircle, Info, Building2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -55,6 +56,7 @@ const formSchema = z
       .max(31, 'Payment day must be between 1 and 31.'),
     tenantName: z.string().optional(),
     tenantContact: z.string().optional(),
+    units: z.coerce.number().min(1, 'Units must be at least 1.').default(1),
   })
   .superRefine((data, ctx) => {
     if (data.status === 'Occupied') {
@@ -94,6 +96,8 @@ const CATEGORIES = [
   { id: 'other', name: 'Other' },
 ];
 
+const MULTI_UNIT_CATEGORIES = ['apartment', 'flat', 'commercial', 'warehouse'];
+
 export function AddFinishedPropertyForm() {
   const [open, setOpen] = useState(false);
   const db = useFirestore();
@@ -112,10 +116,13 @@ export function AddFinishedPropertyForm() {
       paymentDueDay: 1,
       tenantName: '',
       tenantContact: '',
+      units: 1,
     },
   });
 
+  const categoryId = form.watch('categoryId');
   const status = form.watch('status');
+  const isMultiUnit = MULTI_UNIT_CATEGORIES.includes(categoryId);
 
   const onSubmit = async (values: FinishedPropertyFormValues) => {
     if (!db || !user) {
@@ -145,6 +152,7 @@ export function AddFinishedPropertyForm() {
         paymentDueDay: isOccupied ? values.paymentDueDay : 0,
         tenantName: isOccupied ? (values.tenantName || '') : '',
         tenantContact: isOccupied ? (values.tenantContact || '') : '',
+        units: values.units,
         createdAt: new Date().toISOString(),
         isDeleted: false,
         members: { [user.uid]: 'admin' },
@@ -158,7 +166,7 @@ export function AddFinishedPropertyForm() {
 
       toast({
         title: 'Property Added',
-        description: 'The finished property has been successfully added to Firestore.',
+        description: 'The finished property has been successfully added.',
       });
       form.reset();
       setOpen(false);
@@ -182,13 +190,16 @@ export function AddFinishedPropertyForm() {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Finished Property</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            Add Finished Property
+          </DialogTitle>
           <DialogDescription>
-            Enter the details for the new finished property.
+            Enter the details for the new finished property. Multi-unit properties will require extra details.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -231,6 +242,32 @@ export function AddFinishedPropertyForm() {
                 )}
               />
             </div>
+
+            {isMultiUnit && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <Alert variant="default" className="bg-primary/5 border-primary/20">
+                  <Info className="h-4 w-4 text-primary" />
+                  <AlertTitle className="text-primary font-semibold">Multi-Unit Property Detected</AlertTitle>
+                  <AlertDescription className="text-primary/80">
+                    This category usually implies multiple individual units (e.g., separate apartments in a building). Please specify the total number of units below.
+                  </AlertDescription>
+                </Alert>
+                <FormField
+                  control={form.control}
+                  name="units"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Total Number of Units</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={1} {...field} />
+                      </FormControl>
+                      <FormDescription>How many separate rentable spaces are in this property?</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
             
             <FormField
               control={form.control}
@@ -251,9 +288,9 @@ export function AddFinishedPropertyForm() {
                 name="size"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Size</FormLabel>
+                    <FormLabel>Overall Size</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 3-bedroom, 2400 sqft" {...field} />
+                      <Input placeholder="e.g. 12-unit building or 2400 sqft" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -280,7 +317,7 @@ export function AddFinishedPropertyForm() {
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Current Occupancy Status</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -315,8 +352,10 @@ export function AddFinishedPropertyForm() {
             </div>
 
             {status === 'Occupied' && (
-              <div className="space-y-4 border-t pt-4 mt-4">
-                <h3 className="text-sm font-semibold">Tenant Details</h3>
+              <div className="space-y-4 border-t pt-4 mt-4 bg-muted/20 p-4 rounded-lg animate-in fade-in duration-300">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  Primary Tenant Details
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -350,7 +389,7 @@ export function AddFinishedPropertyForm() {
                   name="monthlyRent"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Monthly Rent Amount</FormLabel>
+                      <FormLabel>Monthly Rent Amount (Total)</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g. 10000" {...field} />
                       </FormControl>
@@ -361,10 +400,10 @@ export function AddFinishedPropertyForm() {
               </div>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="pt-4 border-t">
               <Button
                 type="submit"
-                className="w-full md:w-auto"
+                className="w-full md:w-auto font-bold"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting ? 'Adding...' : 'Add Property'}

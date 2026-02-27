@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -36,6 +35,7 @@ import {
   AlertCircle,
   Construction,
   Loader2,
+  LayoutGrid,
 } from 'lucide-react';
 import { InvestmentProgress } from '@/components/properties/investment-progress';
 import { CostOverrunAlert } from '@/components/expenses/cost-overrun-alert';
@@ -175,9 +175,17 @@ export default function PropertyDetailPage() {
             {calculatedProperty.location}
           </p>
         </div>
-        <Badge variant={calculatedProperty.type === 'Finished' ? 'default' : 'secondary'} className="px-4 py-1">
-          {calculatedProperty.type}
-        </Badge>
+        <div className="flex items-center gap-2">
+           <Badge variant={calculatedProperty.type === 'Finished' ? 'default' : 'secondary'} className="px-4 py-1">
+            {calculatedProperty.type}
+          </Badge>
+          {calculatedProperty.units && calculatedProperty.units > 1 && (
+            <Badge variant="outline" className="border-primary text-primary px-3 py-1 flex items-center gap-1">
+              <LayoutGrid className="h-3 w-3" />
+              {calculatedProperty.units} Units
+            </Badge>
+          )}
+        </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -252,6 +260,9 @@ export default function PropertyDetailPage() {
                 label="Date Created"
                 value={calculatedProperty.createdAt ? new Date(calculatedProperty.createdAt).toLocaleDateString() : 'N/A'}
               />
+              {calculatedProperty.units && calculatedProperty.units > 1 && (
+                <DetailItem icon={LayoutGrid} label="Total Units" value={`${calculatedProperty.units} Spaces`} />
+              )}
               {calculatedProperty.type === 'Finished' && (
                 <DetailItem
                   icon={DollarSign}

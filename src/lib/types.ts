@@ -24,6 +24,7 @@ export type Property = {
   paymentDueDay: number;
   tenantName: string;
   tenantContact: string;
+  units?: number; // Added for multi-unit support
 
   // Fields for Under Construction Properties
   constructionStage: 'Planning' | 'Foundation' | 'Framing' | 'Roofing' | 'Finishing' | 'Completed';
