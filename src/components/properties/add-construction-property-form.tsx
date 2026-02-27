@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -32,7 +33,10 @@ import {
 } from '@/components/ui/select';
 import { PlusCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { addConstructionPropertyAction } from './actions';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Property name is required.'),
@@ -54,6 +58,9 @@ type ConstructionPropertyFormValues = z.infer<typeof formSchema>;
 
 export function AddConstructionPropertyForm() {
   const [open, setOpen] = useState(false);
+  const db = useFirestore();
+  const { user } = useUser();
+
   const form = useForm<ConstructionPropertyFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -66,35 +73,53 @@ export function AddConstructionPropertyForm() {
   });
 
   const onSubmit = async (values: ConstructionPropertyFormValues) => {
-    try {
-      const normalizedValues = {
-        ...values,
-        estimatedBudget:
-          typeof values.estimatedBudget === 'number' && !Number.isNaN(values.estimatedBudget)
-            ? values.estimatedBudget
-            : undefined,
-      };
+    if (!db || !user) return;
 
-      await addConstructionPropertyAction(normalizedValues);
-      toast({
-        title: 'Property Added',
-        description: 'The under construction property has been successfully added.',
+    const propertyData = {
+      name: values.name,
+      code: `CP-${Date.now().toString().slice(-6)}`,
+      categoryId: 'under-construction',
+      location: values.location,
+      size: values.size,
+      description: '',
+      type: 'Under Construction',
+      imageId: 'prop-2-img',
+      totalInvestment: 0,
+      status: 'Vacant',
+      monthlyRent: 0,
+      paymentDueDay: 0,
+      tenantName: '',
+      tenantContact: '',
+      constructionStage: values.constructionStage,
+      estimatedBudget: values.estimatedBudget || 0,
+      createdAt: new Date().toISOString(),
+      isDeleted: false,
+      members: { [user.uid]: 'admin' },
+      totalConstructionCost: 0,
+      totalRentReceived: 0,
+      totalMaintenanceCost: 0,
+      remainingInvestment: 0,
+      totalProfit: 0,
+      netProfit: 0,
+    };
+
+    addDoc(collection(db, 'construction_properties'), propertyData)
+      .then(() => {
+        toast({
+          title: 'Property Added',
+          description: 'The construction property has been successfully added.',
+        });
+        form.reset();
+        setOpen(false);
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'construction_properties',
+          operation: 'create',
+          requestResourceData: propertyData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
-      form.reset({
-        name: '',
-        location: '',
-        size: '',
-        constructionStage: 'Foundation',
-        estimatedBudget: undefined,
-      });
-      setOpen(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not add the property.',
-      });
-    }
   };
 
   return (
@@ -107,9 +132,9 @@ export function AddConstructionPropertyForm() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Add Under Construction Property</DialogTitle>
+          <DialogTitle>Add Construction Property</DialogTitle>
           <DialogDescription>
-            Enter the details for the new under construction property.
+            Enter the details for the new project in the construction pipeline.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -121,7 +146,7 @@ export function AddConstructionPropertyForm() {
                 <FormItem>
                   <FormLabel>Property Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Oakside Apartments" {...field} />
+                    <Input placeholder="e.g. Oakside Apartments Phase 2" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -186,7 +211,7 @@ export function AddConstructionPropertyForm() {
               name="estimatedBudget"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Estimated Budget (optional)</FormLabel>
+                  <FormLabel>Estimated Budget (ZMW)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -212,4 +237,3 @@ export function AddConstructionPropertyForm() {
     </Dialog>
   );
 }
-

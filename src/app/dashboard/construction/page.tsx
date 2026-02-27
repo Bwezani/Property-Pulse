@@ -1,31 +1,51 @@
 
+'use client';
+
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
-import {
-  getProperties,
-  getAllConstructionExpenses,
-} from '@/lib/data';
-import { calculatePropertyFinancials } from '@/lib/financials';
-import { Construction, Banknote, GanttChartSquare, Landmark } from 'lucide-react';
-import type { Property } from '@/lib/types';
+import { Construction, Banknote, GanttChartSquare, Landmark, Loader2 } from 'lucide-react';
+import type { Property, ConstructionExpense } from '@/lib/types';
 import { ImportUnderConstructionProperties } from '@/components/properties/import-under-construction-properties';
 import { AddConstructionPropertyWrapper } from '@/components/properties/add-construction-property-wrapper';
 import { ConstructionExpenseBarChart } from '../reports/construction-expense-bar-chart';
+import { calculatePropertyFinancials } from '@/lib/financials';
 
-export default async function ConstructionDashboardPage() {
-  const propertiesData = await getProperties();
-  const constructionExpenses = await getAllConstructionExpenses();
+export default function ConstructionDashboardPage() {
+  const db = useFirestore();
+  const { user, isUserLoading: isAuthLoading } = useUser();
 
-  const constructionProperties: Property[] = propertiesData
-    .filter((p) => p.type === 'Under Construction')
-    .map((p) =>
-      calculatePropertyFinancials(
-        p,
-        constructionExpenses,
-        [],
-        []
-      )
+  // Fetch all construction properties
+  const constructionPropsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'construction_properties'));
+  }, [db, user]);
+  const { data: rawProperties, isLoading: isPropsLoading } = useCollection<Property>(constructionPropsQuery);
+
+  // Fetch all construction expenses for calculation
+  const allExpensesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'construction_expenses'));
+  }, [db, user]);
+  const { data: allExpenses, isLoading: isExpensesLoading } = useCollection<ConstructionExpense>(allExpensesQuery);
+
+  if (isAuthLoading || isPropsLoading || isExpensesLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
+  }
+
+  const constructionProperties: Property[] = (rawProperties || []).map((p) =>
+    calculatePropertyFinancials(
+      p,
+      (allExpenses || []).filter(e => e.propertyId === p.id),
+      [],
+      []
+    )
+  );
 
   const totalActiveProjects = constructionProperties.length;
   const totalConstructionCost = constructionProperties.reduce(
@@ -39,9 +59,7 @@ export default async function ConstructionDashboardPage() {
   }, {} as Record<string, number>);
 
   // Aggregate expenses for the chart
-  // Since individual expenses don't have categories yet, we'll mock some categories based on item names for the visual
-  const expenseCategories = constructionExpenses.reduce((acc, exp) => {
-    // Basic heuristic for demo purposes
+  const expenseCategories = (allExpenses || []).reduce((acc, exp) => {
     let cat = 'Other';
     const name = exp.itemName.toLowerCase();
     if (name.includes('cement') || name.includes('brick') || name.includes('sand')) cat = 'Materials';

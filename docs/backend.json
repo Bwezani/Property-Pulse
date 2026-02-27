@@ -106,7 +106,11 @@
   "firestore": {
     "/finished_properties/{propertyId}": {
       "schema": { "$ref": "#/backend/entities/Property" },
-      "description": "Collection for all properties."
+      "description": "Collection for completed properties."
+    },
+    "/construction_properties/{propertyId}": {
+      "schema": { "$ref": "#/backend/entities/Property" },
+      "description": "Collection for properties currently under construction."
     },
     "/construction_expenses/{expenseId}": {
       "schema": { "$ref": "#/backend/entities/ConstructionExpense" },

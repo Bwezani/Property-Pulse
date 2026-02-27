@@ -62,12 +62,20 @@ export default function PropertyDetailPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  const propertyRef = useMemoFirebase(() => {
+  // Try to find the property in either collection
+  const finishedRef = useMemoFirebase(() => {
     if (!db || !id) return null;
     return doc(db, 'finished_properties', id);
   }, [db, id]);
-  const { data: rawProperty, isLoading: isPropLoading } = useDoc<Property>(propertyRef);
+  const { data: finishedProp, isLoading: isFinishedLoading } = useDoc<Property>(finishedRef);
 
+  const constructionRef = useMemoFirebase(() => {
+    if (!db || !id) return null;
+    return doc(db, 'construction_properties', id);
+  }, [db, id]);
+  const { data: constructionProp, isLoading: isConstructionLoading } = useDoc<Property>(constructionRef);
+
+  // Common data queries
   const qExpenses = useMemoFirebase(() => {
     if (!db || !id) return null;
     return query(collection(db, 'construction_expenses'), where('propertyId', '==', id));
@@ -92,13 +100,15 @@ export default function PropertyDetailPage() {
   }, [db, id]);
   const { data: budgetItems } = useCollection<ConstructionBudgetItem>(qBudget);
 
-  if (isAuthLoading || isPropLoading) {
+  if (isAuthLoading || isFinishedLoading || isConstructionLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  const rawProperty = finishedProp || constructionProp;
 
   if (!rawProperty) {
     return <div className="p-8 text-center">Property not found.</div>;
