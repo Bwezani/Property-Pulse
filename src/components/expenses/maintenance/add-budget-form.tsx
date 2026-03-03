@@ -79,23 +79,20 @@ export function AddMaintenanceBudgetItemForm({
         createdAt: new Date().toISOString(),
     };
 
-    addDoc(collection(db, 'maintenance_budget_items'), budgetData)
+    const targetCollection = collection(db, 'users', user.uid, 'maintenance_budget_items');
+
+    addDoc(targetCollection, budgetData)
       .then(() => {
         toast({
             title: 'Budget Item Added',
             description: 'The maintenance budget item has been successfully added.',
         });
-        form.reset({
-            itemName: '',
-            category: '',
-            customCategory: '',
-            estimatedCost: 0,
-        });
+        form.reset();
         setOpen(false);
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: 'maintenance_budget_items',
+            path: targetCollection.path,
             operation: 'create',
             requestResourceData: budgetData,
         }));
@@ -114,7 +111,7 @@ export function AddMaintenanceBudgetItemForm({
         <DialogHeader>
           <DialogTitle>Add Maintenance Budget Item</DialogTitle>
           <DialogDescription>
-            Enter the planned item with its estimated (budgeted) cost. You can fill the actual cost later after purchase.
+            Enter the planned item with its estimated cost.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -150,8 +147,6 @@ export function AddMaintenanceBudgetItemForm({
                       <option value="Plumbing">Plumbing</option>
                       <option value="Electrical">Electrical</option>
                       <option value="Cleaning">Cleaning</option>
-                      <option value="Roofing">Roofing</option>
-                      <option value="Security">Security</option>
                       <option value="Painting">Painting</option>
                       <option value="Other">Other</option>
                     </select>
@@ -169,7 +164,7 @@ export function AddMaintenanceBudgetItemForm({
                     <FormLabel>Enter Custom Category</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g.  Security"
+                        placeholder="e.g. Security"
                         {...field}
                       />
                     </FormControl>

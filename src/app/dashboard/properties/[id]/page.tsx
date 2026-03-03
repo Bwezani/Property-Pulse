@@ -63,7 +63,7 @@ export default function PropertyDetailPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Try to find the property in either user-specific collection
+  // Try to find the property in either user-specific sub-collection
   const finishedRef = useMemoFirebase(() => {
     if (!db || !id || !user) return null;
     return doc(db, 'users', user.uid, 'finished_properties', id);
@@ -76,7 +76,7 @@ export default function PropertyDetailPage() {
   }, [db, id, user]);
   const { data: constructionProp, isLoading: isConstructionLoading } = useDoc<Property>(constructionRef);
 
-  // User-specific data queries
+  // User-specific data queries from their private branch
   const qExpenses = useMemoFirebase(() => {
     if (!db || !id || !user) return null;
     return query(
@@ -377,7 +377,7 @@ export default function PropertyDetailPage() {
       </div>
 
       <Tabs defaultValue={calculatedProperty.type === 'Under Construction' ? 'construction' : 'income'} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
           {calculatedProperty.type === 'Under Construction' && <TabsTrigger value="construction">Expenditure</TabsTrigger>}
           {calculatedProperty.type === 'Under Construction' && <TabsTrigger value="budget">Project Budget</TabsTrigger>}
           {calculatedProperty.type === 'Finished' && <TabsTrigger value="income">Rental Income</TabsTrigger>}

@@ -79,23 +79,20 @@ export function AddConstructionBudgetItemForm({
         createdAt: new Date().toISOString(),
     };
 
-    addDoc(collection(db, 'construction_budget_items'), budgetData)
+    const targetCollection = collection(db, 'users', user.uid, 'construction_budget_items');
+
+    addDoc(targetCollection, budgetData)
       .then(() => {
         toast({
             title: 'Budget Item Added',
             description: 'The construction budget item has been successfully added.',
         });
-        form.reset({
-            itemName: '',
-            category: '',
-            customCategory: '',
-            estimatedCost: 0,
-        });
+        form.reset();
         setOpen(false);
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: 'construction_budget_items',
+            path: targetCollection.path,
             operation: 'create',
             requestResourceData: budgetData,
         }));
@@ -114,7 +111,7 @@ export function AddConstructionBudgetItemForm({
         <DialogHeader>
           <DialogTitle>Add Construction Budget Item</DialogTitle>
           <DialogDescription>
-            Enter the planned item with its estimated (budgeted) cost. You can fill the actual cost later after purchase.
+            Enter the planned item with its estimated cost.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -152,7 +149,6 @@ export function AddConstructionBudgetItemForm({
                       <option value="Transport">Transport</option>
                       <option value="Permits">Permits</option>
                       <option value="Equipment">Equipment</option>
-                      <option value="Utilities">Utilities</option>
                       <option value="Other">Other</option>
                     </select>
                   </FormControl>

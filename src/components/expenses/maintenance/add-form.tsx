@@ -89,28 +89,23 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
         createdAt: new Date().toISOString(),
     };
 
-    addDoc(collection(db, 'maintenance_expenses'), expenseData)
+    const targetCollection = collection(db, 'users', user.uid, 'maintenance_expenses');
+
+    addDoc(targetCollection, expenseData)
       .then(() => {
         toast({
             title: 'Expense Added',
             description: 'The maintenance expense has been successfully added.',
         });
-        form.reset({
-            description: '',
-            amount: 0,
-            vendor: '',
-            unitIds: [],
-            date: today,
-        });
+        form.reset();
         setOpen(false);
       })
       .catch(async (error) => {
-        const contextualError = new FirestorePermissionError({
-          path: 'maintenance_expenses',
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: targetCollection.path,
           operation: 'create',
           requestResourceData: expenseData,
-        });
-        errorEmitter.emit('permission-error', contextualError);
+        }));
       });
   };
 
@@ -128,7 +123,7 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Add Maintenance Expense</DialogTitle>
           <DialogDescription>
-            Enter the details for the new maintenance expense for <strong>{property.name}</strong>.
+            Enter the details for the new maintenance expense.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

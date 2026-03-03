@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -85,15 +86,17 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
       createdAt: new Date().toISOString(),
     };
 
-    addDoc(collection(db, 'construction_expenses'), expenseData)
+    const targetCollection = collection(db, 'users', user.uid, 'construction_expenses');
+
+    addDoc(targetCollection, expenseData)
       .then(() => {
         toast({ title: 'Expense Added', description: 'The construction expense has been successfully added.' });
-        form.reset({ quantity: 1, itemName: '', unitPrice: 0, vendor: '', notes: '', purchaseDate: today });
+        form.reset();
         setOpen(false);
       })
       .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'construction_expenses',
+          path: targetCollection.path,
           operation: 'create',
           requestResourceData: expenseData,
         }));
