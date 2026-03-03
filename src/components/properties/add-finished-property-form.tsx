@@ -30,9 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Info, Building2, User, Home, Trash2 } from 'lucide-react';
+import { PlusCircle, Building2, User, Home, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -56,8 +55,8 @@ const unitSchema = z.object({
   status: z.enum(['Occupied', 'Vacant']),
   monthlyRent: z.coerce.number().min(0, 'Rent cannot be negative.'),
   paymentDueDay: z.coerce.number().min(1).max(31),
-  tenantName: z.string().optional(),
-  tenantContact: z.string().optional(),
+  tenantName: z.string().optional().default(''),
+  tenantContact: z.string().optional().default(''),
 });
 
 const formSchema = z.object({
@@ -68,11 +67,11 @@ const formSchema = z.object({
   totalInvestment: z.coerce.number().min(0.01, 'Total investment must be greater than 0.'),
   units: z.coerce.number().min(1, 'Units must be at least 1.').default(1),
   unitsList: z.array(unitSchema),
-  status: z.enum(['Occupied', 'Vacant']).optional(),
-  monthlyRent: z.coerce.number().optional(),
-  paymentDueDay: z.coerce.number().optional(),
-  tenantName: z.string().optional(),
-  tenantContact: z.string().optional(),
+  status: z.enum(['Occupied', 'Vacant']).optional().default('Vacant'),
+  monthlyRent: z.coerce.number().optional().default(0),
+  paymentDueDay: z.coerce.number().optional().default(1),
+  tenantName: z.string().optional().default(''),
+  tenantContact: z.string().optional().default(''),
 });
 
 type FinishedPropertyFormValues = z.infer<typeof formSchema>;
@@ -104,6 +103,8 @@ export function AddFinishedPropertyForm() {
       status: 'Vacant',
       monthlyRent: 0,
       paymentDueDay: 1,
+      tenantName: '',
+      tenantContact: '',
     },
   });
 
@@ -140,9 +141,21 @@ export function AddFinishedPropertyForm() {
       return;
     }
 
+    // Ensure no field is undefined before passing to Firestore
     const finalUnitsList = isMultiUnit
-      ? values.unitsList
-      : [{ unitName: 'Main Unit', status: values.status || 'Vacant', monthlyRent: values.monthlyRent || 0, paymentDueDay: values.paymentDueDay || 1, tenantName: values.tenantName || '', tenantContact: values.tenantContact || '' }];
+      ? values.unitsList.map(u => ({
+          ...u,
+          tenantName: u.tenantName ?? '',
+          tenantContact: u.tenantContact ?? '',
+        }))
+      : [{ 
+          unitName: 'Main Unit', 
+          status: values.status || 'Vacant', 
+          monthlyRent: values.monthlyRent || 0, 
+          paymentDueDay: values.paymentDueDay || 1, 
+          tenantName: values.tenantName ?? '', 
+          tenantContact: values.tenantContact ?? '' 
+        }];
 
     const propertyData = {
       userId: user.uid,
@@ -160,11 +173,11 @@ export function AddFinishedPropertyForm() {
       createdAt: new Date().toISOString(),
       isDeleted: false,
       members: { [user.uid]: 'admin' },
-      status: !isMultiUnit ? values.status : 'Occupied',
-      monthlyRent: !isMultiUnit ? values.monthlyRent : 0,
-      paymentDueDay: !isMultiUnit ? values.paymentDueDay : 1,
-      tenantName: !isMultiUnit ? values.tenantName : '',
-      tenantContact: !isMultiUnit ? values.tenantContact : '',
+      status: !isMultiUnit ? (values.status || 'Vacant') : 'Occupied',
+      monthlyRent: !isMultiUnit ? (values.monthlyRent || 0) : 0,
+      paymentDueDay: !isMultiUnit ? (values.paymentDueDay || 1) : 1,
+      tenantName: !isMultiUnit ? (values.tenantName ?? '') : '',
+      tenantContact: !isMultiUnit ? (values.tenantContact ?? '') : '',
       totalConstructionCost: 0,
       totalRentReceived: 0,
       totalMaintenanceCost: 0,
