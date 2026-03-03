@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -141,7 +142,6 @@ export function AddFinishedPropertyForm() {
       return;
     }
 
-    // Ensure no field is undefined before passing to Firestore
     const finalUnitsList = isMultiUnit
       ? values.unitsList.map(u => ({
           ...u,
@@ -186,15 +186,17 @@ export function AddFinishedPropertyForm() {
       netProfit: 0,
     };
 
-    addDoc(collection(db, 'finished_properties'), propertyData)
+    const targetCollection = collection(db, 'users', user.uid, 'finished_properties');
+
+    addDoc(targetCollection, propertyData)
       .then(() => {
         toast({ title: 'Property Added', description: 'The property has been successfully added.' });
         form.reset();
         setOpen(false);
       })
-      .catch(async () => {
+      .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'finished_properties',
+          path: targetCollection.path,
           operation: 'create',
           requestResourceData: propertyData,
         }));

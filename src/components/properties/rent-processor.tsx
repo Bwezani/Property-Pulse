@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Property, PropertyUnit } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -16,11 +17,7 @@ export function RentProcessor() {
 
   const propertiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(
-      collection(db, 'finished_properties'),
-      where('userId', '==', user.uid),
-      where('isDeleted', '==', false)
-    );
+    return collection(db, 'users', user.uid, 'finished_properties');
   }, [db, user]);
 
   const { data: properties } = useCollection<Property>(propertiesQuery);
@@ -50,7 +47,8 @@ export function RentProcessor() {
       if (!db || !user) return;
       
       const docId = `rent-${propId}-${unitId}-${monthKey}`;
-      const docRef = doc(db, 'rental_incomes', docId);
+      const docPath = `users/${user.uid}/rental_incomes`;
+      const docRef = doc(db, docPath, docId);
 
       const incomeData = {
         userId: user.uid,

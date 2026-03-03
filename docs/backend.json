@@ -104,23 +104,23 @@
     ]
   },
   "firestore": {
-    "/finished_properties/{propertyId}": {
+    "/users/{userId}/finished_properties/{propertyId}": {
       "schema": { "$ref": "#/backend/entities/Property" },
-      "description": "Collection for completed properties."
+      "description": "User's completed properties."
     },
-    "/construction_properties/{propertyId}": {
+    "/users/{userId}/construction_properties/{propertyId}": {
       "schema": { "$ref": "#/backend/entities/Property" },
-      "description": "Collection for properties currently under construction."
+      "description": "User's properties under construction."
     },
-    "/construction_expenses/{expenseId}": {
+    "/users/{userId}/construction_expenses/{expenseId}": {
       "schema": { "$ref": "#/backend/entities/ConstructionExpense" },
-      "description": "Expenses incurred during construction."
+      "description": "Expenses for construction projects."
     },
-    "/maintenance_expenses/{expenseId}": {
+    "/users/{userId}/maintenance_expenses/{expenseId}": {
       "schema": { "$ref": "#/backend/entities/MaintenanceExpense" },
-      "description": "Expenses incurred for ongoing maintenance."
+      "description": "Maintenance costs for properties."
     },
-    "/rental_incomes/{incomeId}": {
+    "/users/{userId}/rental_incomes/{incomeId}": {
       "schema": { "$ref": "#/backend/entities/RentalIncome" },
       "description": "Rental income records."
     }

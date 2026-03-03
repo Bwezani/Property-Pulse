@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -102,15 +103,17 @@ export function AddConstructionPropertyForm() {
       netProfit: 0,
     };
 
-    addDoc(collection(db, 'construction_properties'), propertyData)
+    const targetCollection = collection(db, 'users', user.uid, 'construction_properties');
+
+    addDoc(targetCollection, propertyData)
       .then(() => {
         toast({ title: 'Property Added', description: 'The construction property has been successfully added.' });
         form.reset();
         setOpen(false);
       })
-      .catch(async () => {
+      .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'construction_properties',
+          path: targetCollection.path,
           operation: 'create',
           requestResourceData: propertyData,
         }));

@@ -63,26 +63,25 @@ export default function PropertyDetailPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Try to find the property in either collection
+  // Try to find the property in either user-specific collection
   const finishedRef = useMemoFirebase(() => {
-    if (!db || !id) return null;
-    return doc(db, 'finished_properties', id);
-  }, [db, id]);
+    if (!db || !id || !user) return null;
+    return doc(db, 'users', user.uid, 'finished_properties', id);
+  }, [db, id, user]);
   const { data: finishedProp, isLoading: isFinishedLoading } = useDoc<Property>(finishedRef);
 
   const constructionRef = useMemoFirebase(() => {
-    if (!db || !id) return null;
-    return doc(db, 'construction_properties', id);
-  }, [db, id]);
+    if (!db || !id || !user) return null;
+    return doc(db, 'users', user.uid, 'construction_properties', id);
+  }, [db, id, user]);
   const { data: constructionProp, isLoading: isConstructionLoading } = useDoc<Property>(constructionRef);
 
-  // Common data queries - now including userId for security rule compliance
+  // User-specific data queries
   const qExpenses = useMemoFirebase(() => {
     if (!db || !id || !user) return null;
     return query(
-      collection(db, 'construction_expenses'), 
-      where('propertyId', '==', id),
-      where('userId', '==', user.uid)
+      collection(db, 'users', user.uid, 'construction_expenses'), 
+      where('propertyId', '==', id)
     );
   }, [db, id, user]);
   const { data: constructionExpenses } = useCollection<ConstructionExpense>(qExpenses);
@@ -90,9 +89,8 @@ export default function PropertyDetailPage() {
   const qIncomes = useMemoFirebase(() => {
     if (!db || !id || !user) return null;
     return query(
-      collection(db, 'rental_incomes'), 
-      where('propertyId', '==', id),
-      where('userId', '==', user.uid)
+      collection(db, 'users', user.uid, 'rental_incomes'), 
+      where('propertyId', '==', id)
     );
   }, [db, id, user]);
   const { data: rentalIncomes } = useCollection<RentalIncome>(qIncomes);
@@ -100,9 +98,8 @@ export default function PropertyDetailPage() {
   const qMaintenance = useMemoFirebase(() => {
     if (!db || !id || !user) return null;
     return query(
-      collection(db, 'maintenance_expenses'), 
-      where('propertyId', '==', id),
-      where('userId', '==', user.uid)
+      collection(db, 'users', user.uid, 'maintenance_expenses'), 
+      where('propertyId', '==', id)
     );
   }, [db, id, user]);
   const { data: maintenanceExpenses } = useCollection<MaintenanceExpense>(qMaintenance);
@@ -110,9 +107,8 @@ export default function PropertyDetailPage() {
   const qBudget = useMemoFirebase(() => {
     if (!db || !id || !user) return null;
     return query(
-      collection(db, 'construction_budget_items'), 
-      where('propertyId', '==', id),
-      where('userId', '==', user.uid)
+      collection(db, 'users', user.uid, 'construction_budget_items'), 
+      where('propertyId', '==', id)
     );
   }, [db, id, user]);
   const { data: budgetItems } = useCollection<ConstructionBudgetItem>(qBudget);

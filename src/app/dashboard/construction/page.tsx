@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
 import { Construction, Banknote, GanttChartSquare, Landmark, Loader2, TrendingDown } from 'lucide-react';
@@ -15,17 +16,17 @@ export default function ConstructionDashboardPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Fetch all construction properties for current user
+  // Fetch all construction properties for current user from their private collection
   const constructionPropsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'construction_properties'), where('userId', '==', user.uid));
+    return collection(db, 'users', user.uid, 'construction_properties');
   }, [db, user]);
   const { data: rawProperties, isLoading: isPropsLoading } = useCollection<Property>(constructionPropsQuery);
 
-  // Fetch all construction expenses for calculation filtered by user
+  // Fetch all construction expenses for calculation
   const allExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'construction_expenses'), where('userId', '==', user.uid));
+    return collection(db, 'users', user.uid, 'construction_expenses');
   }, [db, user]);
   const { data: allExpenses, isLoading: isExpensesLoading } = useCollection<ConstructionExpense>(allExpensesQuery);
 
