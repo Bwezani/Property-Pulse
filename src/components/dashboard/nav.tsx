@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard,
   Building,
   Construction,
   Landmark,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react';
 
 const navItems = [
+  { href: '/dashboard/all-properties', label: 'All Properties', icon: Landmark },
   {
     href: '/dashboard/finished-properties',
     label: 'Finished Properties',
@@ -21,7 +21,6 @@ const navItems = [
     label: 'Under Construction',
     icon: Construction,
   },
-  { href: '/dashboard/all-properties', label: 'All Properties', icon: Landmark },
   { href: '/dashboard/reports', label: 'Financial Reports', icon: LineChart },
 ];
 
@@ -38,7 +37,6 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
             'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
             {
               'bg-muted text-primary': pathname.startsWith(href),
-              'flex-col h-auto justify-center gap-1': isMobile && false, // placeholder for a different mobile view if needed
             }
           )}
         >
