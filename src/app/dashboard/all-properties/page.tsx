@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { Loader2, Landmark, TrendingUp, LayoutGrid, BadgePercent } from 'lucide-react';
 import type { Property, ConstructionExpense, RentalIncome, MaintenanceExpense } from '@/lib/types';
+import { PropertyListItem } from '@/components/properties/property-list-item';
+import { AddFinishedPropertyWrapper } from '@/components/properties/add-finished-property-wrapper';
+import { AddConstructionPropertyWrapper } from '@/components/properties/add-construction-property-wrapper';
 
 export default function AllPropertiesPage() {
   const db = useFirestore();
@@ -82,9 +85,15 @@ export default function AllPropertiesPage() {
 
   return (
     <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-headline font-bold text-foreground">Portfolio Overview</h1>
-          <p className="text-muted-foreground text-sm">Aggregated financial performance and asset tracking across all stages.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-headline font-bold text-foreground">Portfolio Overview</h1>
+            <p className="text-muted-foreground text-sm">Aggregated financial performance and asset tracking across all stages.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <AddFinishedPropertyWrapper />
+            <AddConstructionPropertyWrapper />
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -118,15 +127,32 @@ export default function AllPropertiesPage() {
             />
         </div>
 
-        <Card className="border-border/50 shadow-sm">
-            <CardHeader>
-                <CardTitle className="font-headline text-2xl text-foreground">Property Inventory</CardTitle>
-                <CardDescription>Detailed breakdown of individual property performance.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <DataTable columns={columns} data={calculatedProperties} />
-            </CardContent>
-        </Card>
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h2 className="font-headline text-2xl font-bold text-foreground">Property Inventory</h2>
+            </div>
+            
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+                <Card className="border-border/50 shadow-sm">
+                    <CardContent className="pt-6">
+                        <DataTable columns={columns} data={calculatedProperties} />
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden grid gap-6">
+                {calculatedProperties.map((property) => (
+                    <PropertyListItem key={property.id} property={property} />
+                ))}
+                {calculatedProperties.length === 0 && (
+                    <div className="text-center py-20 border-2 border-dashed rounded-xl bg-muted/20">
+                        <p className="text-muted-foreground font-medium">No properties found in your portfolio.</p>
+                    </div>
+                )}
+            </div>
+        </div>
     </div>
   );
 }

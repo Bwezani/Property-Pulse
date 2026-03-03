@@ -3,9 +3,6 @@
 import { type Table } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { AddFinishedPropertyForm } from './add-finished-property-form';
-import { AddConstructionPropertyForm } from './add-construction-property-form';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -64,10 +61,6 @@ export function DataTableToolbar<TData>({
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-      <div className="ml-4 flex items-center gap-2">
-        <AddFinishedPropertyForm />
-        <AddConstructionPropertyForm />
       </div>
     </div>
   );
