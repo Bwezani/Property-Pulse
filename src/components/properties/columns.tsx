@@ -1,4 +1,3 @@
-
 'use client';
 import type { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
@@ -15,8 +14,9 @@ import { MoreHorizontal, ArrowUpDown, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Property } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
-import { getFirestore, doc, deleteDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, deleteDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
+import { formatCurrency } from '@/lib/utils';
 
 const StatusBadge = ({ status }: { status: 'Occupied' | 'Vacant' }) => {
   return (
@@ -86,13 +86,7 @@ export const columns: ColumnDef<Property>[] = [
     header: 'Investment',
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('totalInvestment'));
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'ZMW',
-        maximumFractionDigits: 0,
-      }).format(amount);
-
-      return <div className="font-medium">{formatted}</div>;
+      return <div className="font-medium">{formatCurrency(amount)}</div>;
     },
   },
   {
@@ -100,14 +94,8 @@ export const columns: ColumnDef<Property>[] = [
     header: 'Net Profit',
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('netProfit'));
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'ZMW',
-        maximumFractionDigits: 0,
-      }).format(amount);
       const isProfit = amount >= 0;
-
-      return <div className={`font-medium ${isProfit ? 'text-green-600' : 'text-red-600'}`}>{formatted}</div>;
+      return <div className={`font-medium ${isProfit ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(amount)}</div>;
     },
   },
   {
@@ -121,7 +109,7 @@ export const columns: ColumnDef<Property>[] = [
         try {
           // 1. Get total construction cost
           const expensesRef = collection(db, 'users', user.uid, 'construction_expenses');
-          const q = query(expensesRef, where('propertyId', '==', property.id));
+          const q = query(expensesRef, where('propertyId', '==', property.id), where('userId', '==', user.uid));
           const snapshot = await getDocs(q);
           const totalCost = snapshot.docs.reduce((sum, doc) => sum + (doc.data().totalPrice || 0), 0);
 

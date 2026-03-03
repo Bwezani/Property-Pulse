@@ -82,7 +82,12 @@ export function MonthlySummaryChart({ incomes, expenses }: MonthlySummaryChartPr
               axisLine={false}
             />
             <YAxis
-              tickFormatter={(value) => `$${value / 1000}k`}
+              tickFormatter={(value) => {
+                return new Intl.NumberFormat('en-US', {
+                  notation: 'compact',
+                  compactDisplay: 'short',
+                }).format(value);
+              }}
             />
             <ChartTooltip content={<ChartTooltipContent />} />
             <ChartLegend content={<ChartLegendContent />} />

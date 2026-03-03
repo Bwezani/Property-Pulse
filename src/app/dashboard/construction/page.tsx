@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
 import { Construction, Banknote, GanttChartSquare, Landmark, Loader2, TrendingDown } from 'lucide-react';
@@ -11,6 +10,7 @@ import { ImportUnderConstructionProperties } from '@/components/properties/impor
 import { AddConstructionPropertyWrapper } from '@/components/properties/add-construction-property-wrapper';
 import { ConstructionExpenseBarChart } from '../reports/construction-expense-bar-chart';
 import { calculatePropertyFinancials } from '@/lib/financials';
+import { formatCurrency } from '@/lib/utils';
 
 export default function ConstructionDashboardPage() {
   const db = useFirestore();
@@ -19,14 +19,14 @@ export default function ConstructionDashboardPage() {
   // Fetch all construction properties for current user from their private collection
   const constructionPropsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'construction_properties');
+    return query(collection(db, 'users', user.uid, 'construction_properties'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: rawProperties, isLoading: isPropsLoading } = useCollection<Property>(constructionPropsQuery);
 
   // Fetch all construction expenses for calculation
   const allExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'construction_expenses');
+    return query(collection(db, 'users', user.uid, 'construction_expenses'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: allExpenses, isLoading: isExpensesLoading } = useCollection<ConstructionExpense>(allExpensesQuery);
 
@@ -106,22 +106,14 @@ export default function ConstructionDashboardPage() {
           Icon={Construction}
         />
         <KpiCard
-          title="Total Spent (ZMW)"
-          value={new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'ZMW',
-            maximumFractionDigits: 0,
-          }).format(totalConstructionCost)}
+          title="Total Spent"
+          value={formatCurrency(totalConstructionCost)}
           helperText="Across all active projects"
           Icon={Banknote}
         />
         <KpiCard
           title="Planned Budget"
-          value={new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'ZMW',
-            maximumFractionDigits: 0,
-          }).format(totalPlannedBudget)}
+          value={formatCurrency(totalPlannedBudget)}
           helperText="Target project allocation"
           Icon={Landmark}
         />

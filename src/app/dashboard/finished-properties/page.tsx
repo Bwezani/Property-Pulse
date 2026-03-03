@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
 import { AddFinishedPropertyWrapper } from '@/components/properties/add-finished-property-wrapper';
@@ -10,6 +9,7 @@ import { Home, PiggyBank, BadgePercent, TrendingUp, Loader2 } from 'lucide-react
 import type { Property, ConstructionExpense, RentalIncome, MaintenanceExpense } from '@/lib/types';
 import { ImportFinishedProperties } from '@/components/properties/import-finished-properties';
 import { calculatePropertyFinancials } from '@/lib/financials';
+import { formatCurrency } from '@/lib/utils';
 
 export default function FinishedPropertiesDashboardPage() {
   const db = useFirestore();
@@ -17,26 +17,26 @@ export default function FinishedPropertiesDashboardPage() {
 
   const finishedPropertiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'finished_properties');
+    return query(collection(db, 'users', user.uid, 'finished_properties'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: rawProperties, isLoading: isDataLoading } = useCollection<Property>(finishedPropertiesQuery);
 
   // Fetch related data for calculation
   const expensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'construction_expenses');
+    return query(collection(db, 'users', user.uid, 'construction_expenses'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: allExpenses } = useCollection<ConstructionExpense>(expensesQuery);
 
   const incomesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'rental_incomes');
+    return query(collection(db, 'users', user.uid, 'rental_incomes'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: allIncomes } = useCollection<RentalIncome>(incomesQuery);
 
   const maintenanceQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return collection(db, 'users', user.uid, 'maintenance_expenses');
+    return query(collection(db, 'users', user.uid, 'maintenance_expenses'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: allMaintenance } = useCollection<MaintenanceExpense>(maintenanceQuery);
 
@@ -100,31 +100,19 @@ export default function FinishedPropertiesDashboardPage() {
         />
         <KpiCard
           title="Total Profit Earned"
-          value={new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'ZMW',
-            maximumFractionDigits: 0,
-          }).format(totalProfit)}
+          value={formatCurrency(totalProfit)}
           helperText="Across all properties"
           Icon={PiggyBank}
         />
         <KpiCard
           title="Remaining Investment"
-          value={new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'ZMW',
-            maximumFractionDigits: 0,
-          }).format(totalRemainingInvestment)}
+          value={formatCurrency(totalRemainingInvestment)}
           helperText="To break even on all properties"
           Icon={BadgePercent}
         />
         <KpiCard
           title="Monthly Rental Income"
-          value={new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'ZMW',
-            maximumFractionDigits: 0,
-          }).format(monthlyRentalIncome)}
+          value={formatCurrency(monthlyRentalIncome)}
           helperText="From occupied properties"
           Icon={TrendingUp}
         />

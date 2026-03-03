@@ -1,4 +1,3 @@
-
 'use client';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ConstructionExpense } from '@/lib/types';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
+import { formatCurrency } from '@/lib/utils';
 
 export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
   {
@@ -21,11 +21,7 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     header: 'Unit Price',
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('unitPrice'));
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'ZMW',
-      }).format(amount);
-      return <div className="font-medium">{formatted}</div>;
+      return <div className="font-medium">{formatCurrency(amount)}</div>;
     },
   },
   {
@@ -33,11 +29,7 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     header: 'Total Price',
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('totalPrice'));
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'ZMW',
-      }).format(amount);
-      return <div className="font-medium">{formatted}</div>;
+      return <div className="font-medium">{formatCurrency(amount)}</div>;
     },
   },
   {

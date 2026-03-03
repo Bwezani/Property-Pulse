@@ -1,8 +1,8 @@
-
 'use client';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { RentalIncome } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/lib/utils';
 
 const StatusBadge = ({ status }: { status: 'Paid' | 'Pending' | 'Overdue' }) => {
   let variant: 'default' | 'secondary' | 'destructive' = 'secondary';
@@ -32,11 +32,7 @@ export const rentalIncomeColumns: ColumnDef<RentalIncome>[] = [
         header: 'Amount',
         cell: ({ row }) => {
         const amount = parseFloat(row.getValue('amount'));
-        const formatted = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'ZMW',
-        }).format(amount);
-        return <div className="font-medium">{formatted}</div>;
+        return <div className="font-medium">{formatCurrency(amount)}</div>;
         },
     },
     {

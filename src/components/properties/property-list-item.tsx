@@ -7,6 +7,7 @@ import type { Property } from '@/lib/types';
 import { InvestmentProgress } from './investment-progress';
 import { LayoutGrid, Ruler, MapPin, Building2, AlertTriangle, Hash } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { formatCurrency } from '@/lib/utils';
 
 interface PropertyListItemProps {
   property: Property;
@@ -87,13 +88,13 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
                     <div>
                         <p className="text-muted-foreground uppercase tracking-wider font-semibold">Total Spent</p>
                         <p className={`font-bold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(spent)}
+                          {formatCurrency(spent)}
                         </p>
                     </div>
                     <div className="text-right">
                         <p className="text-muted-foreground uppercase tracking-wider font-semibold">Budgeted</p>
                         <p className="font-bold text-foreground">
-                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(budget)}
+                          {formatCurrency(budget)}
                         </p>
                     </div>
                 </div>

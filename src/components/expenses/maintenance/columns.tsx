@@ -1,4 +1,3 @@
-
 'use client';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { MaintenanceExpense } from '@/lib/types';
@@ -7,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useFirebase } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
+import { formatCurrency } from '@/lib/utils';
 
 export const maintenanceColumns: ColumnDef<MaintenanceExpense>[] = [
   {
@@ -40,11 +40,7 @@ export const maintenanceColumns: ColumnDef<MaintenanceExpense>[] = [
     header: 'Amount',
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('amount'));
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'ZMW',
-      }).format(amount);
-      return <div className="font-medium">{formatted}</div>;
+      return <div className="font-medium">{formatCurrency(amount)}</div>;
     },
   },
   {

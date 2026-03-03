@@ -57,7 +57,12 @@ export function ProfitLossChart({ properties }: ProfitLossChartProps) {
           >
             <CartesianGrid vertical={false} />
             <YAxis
-                tickFormatter={(value) => `$${value / 1000}k`}
+                tickFormatter={(value) => {
+                  return new Intl.NumberFormat('en-US', {
+                    notation: 'compact',
+                    compactDisplay: 'short',
+                  }).format(value);
+                }}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}

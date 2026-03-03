@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -57,6 +56,7 @@ import type {
   MaintenanceExpense,
   ConstructionBudgetItem
 } from '@/lib/types';
+import { formatCurrency } from '@/lib/utils';
 
 export default function PropertyDetailPage() {
   const { id } = useParams() as { id: string };
@@ -81,7 +81,8 @@ export default function PropertyDetailPage() {
     if (!db || !id || !user) return null;
     return query(
       collection(db, 'users', user.uid, 'construction_expenses'), 
-      where('propertyId', '==', id)
+      where('propertyId', '==', id),
+      where('userId', '==', user.uid)
     );
   }, [db, id, user]);
   const { data: constructionExpenses } = useCollection<ConstructionExpense>(qExpenses);
@@ -90,7 +91,8 @@ export default function PropertyDetailPage() {
     if (!db || !id || !user) return null;
     return query(
       collection(db, 'users', user.uid, 'rental_incomes'), 
-      where('propertyId', '==', id)
+      where('propertyId', '==', id),
+      where('userId', '==', user.uid)
     );
   }, [db, id, user]);
   const { data: rentalIncomes } = useCollection<RentalIncome>(qIncomes);
@@ -99,7 +101,8 @@ export default function PropertyDetailPage() {
     if (!db || !id || !user) return null;
     return query(
       collection(db, 'users', user.uid, 'maintenance_expenses'), 
-      where('propertyId', '==', id)
+      where('propertyId', '==', id),
+      where('userId', '==', user.uid)
     );
   }, [db, id, user]);
   const { data: maintenanceExpenses } = useCollection<MaintenanceExpense>(qMaintenance);
@@ -108,7 +111,8 @@ export default function PropertyDetailPage() {
     if (!db || !id || !user) return null;
     return query(
       collection(db, 'users', user.uid, 'construction_budget_items'), 
-      where('propertyId', '==', id)
+      where('propertyId', '==', id),
+      where('userId', '==', user.uid)
     );
   }, [db, id, user]);
   const { data: budgetItems } = useCollection<ConstructionBudgetItem>(qBudget);
@@ -188,7 +192,7 @@ export default function PropertyDetailPage() {
               <>
                 <KpiCard
                   title="Net Profit"
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(calculatedProperty.netProfit)}
+                  value={formatCurrency(calculatedProperty.netProfit)}
                   helperText={calculatedProperty.netProfit >= 0 ? 'Profit after all costs' : 'Loss after all costs'}
                   Icon={TrendingUp}
                 />
@@ -206,7 +210,7 @@ export default function PropertyDetailPage() {
                 />
                 <KpiCard
                   title="Total Rent Received"
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(calculatedProperty.totalRentReceived)}
+                  value={formatCurrency(calculatedProperty.totalRentReceived)}
                   helperText="Lifetime gross rental income"
                   Icon={PiggyBank}
                 />
@@ -215,13 +219,13 @@ export default function PropertyDetailPage() {
               <>
                 <KpiCard
                   title="Total Spent"
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(calculatedProperty.totalConstructionCost)}
+                  value={formatCurrency(calculatedProperty.totalConstructionCost)}
                   helperText="Total project costs to date"
                   Icon={Banknote}
                 />
                 <KpiCard
                   title="Project Budget"
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', maximumFractionDigits: 0 }).format(calculatedProperty.estimatedBudget || 0)}
+                  value={formatCurrency(calculatedProperty.estimatedBudget || 0)}
                   helperText="Initial projected cost"
                   Icon={Wallet}
                 />
@@ -260,7 +264,7 @@ export default function PropertyDetailPage() {
                 <DetailItem
                   icon={DollarSign}
                   label="Monthly Rent"
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.monthlyRent || 0)}
+                  value={formatCurrency(calculatedProperty.monthlyRent || 0)}
                 />
               )}
             </CardContent>
@@ -304,7 +308,7 @@ export default function PropertyDetailPage() {
                              </div>
                           </td>
                           <td className="p-3 text-right font-mono">
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(unit.monthlyRent)}
+                            {formatCurrency(unit.monthlyRent)}
                           </td>
                           <td className="p-3 text-center text-muted-foreground">{unit.paymentDueDay}</td>
                           <td className="p-3 text-right">
@@ -343,22 +347,22 @@ export default function PropertyDetailPage() {
               <div className="space-y-4 pt-4 border-t">
                 <FinancialItem
                   label={calculatedProperty.type === 'Finished' ? 'Initial Investment' : 'Actual Spent'}
-                  value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.type === 'Finished' ? calculatedProperty.totalInvestment : calculatedProperty.totalConstructionCost)}
+                  value={formatCurrency(calculatedProperty.type === 'Finished' ? calculatedProperty.totalInvestment : calculatedProperty.totalConstructionCost)}
                 />
                 {calculatedProperty.type === 'Finished' && (
                   <>
                     <FinancialItem
                       label="Total Rent Received"
-                      value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.totalRentReceived)}
+                      value={formatCurrency(calculatedProperty.totalRentReceived)}
                     />
                     <FinancialItem
                       label="Maintenance Costs"
-                      value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.totalMaintenanceCost)}
+                      value={formatCurrency(calculatedProperty.totalMaintenanceCost)}
                     />
                     <div className="pt-2">
                       <FinancialItem
                         label="Net Profit"
-                        value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(calculatedProperty.netProfit)}
+                        value={formatCurrency(calculatedProperty.netProfit)}
                         isPositive={calculatedProperty.netProfit >= 0}
                       />
                     </div>
@@ -367,7 +371,7 @@ export default function PropertyDetailPage() {
                 {calculatedProperty.type === 'Under Construction' && (
                   <FinancialItem
                     label="Remaining Budget"
-                    value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(Math.max(0, (calculatedProperty.estimatedBudget || 0) - calculatedProperty.totalConstructionCost))}
+                    value={formatCurrency(Math.max(0, (calculatedProperty.estimatedBudget || 0) - calculatedProperty.totalConstructionCost))}
                   />
                 )}
               </div>

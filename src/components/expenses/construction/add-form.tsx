@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -31,6 +30,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { formatCurrency } from '@/lib/utils';
 
 const formSchema = z.object({
   itemName: z.string().min(1, 'Item name is required.'),
@@ -155,7 +155,7 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
                   )}
                 />
             </div>
-             <p className="text-sm font-bold">Total: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(totalPrice)}</p>
+             <p className="text-sm font-bold">Total: {formatCurrency(totalPrice)}</p>
             <FormField
               control={form.control}
               name="vendor"
