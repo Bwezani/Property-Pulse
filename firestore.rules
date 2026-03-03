@@ -7,7 +7,10 @@ service cloud.firestore {
     }
     
     function isOwner(data) {
-      return isSignedIn() && (data.userId == request.auth.uid || (data.members != null && request.auth.uid in data.members));
+      return isSignedIn() && data != null && (
+        data.userId == request.auth.uid || 
+        (data.members != null && request.auth.uid in data.members)
+      );
     }
 
     function isNewOwner() {
@@ -16,37 +19,45 @@ service cloud.firestore {
 
     // Secure all collections
     match /finished_properties/{propertyId} {
-      allow read, update, delete: if isOwner(resource.data);
+      // Allow read if owner OR if document doesn't exist (returns null instead of 403)
+      allow read: if isSignedIn() && (resource == null || isOwner(resource.data));
+      allow update, delete: if isOwner(resource.data);
       allow create: if isNewOwner();
     }
     
     match /construction_properties/{propertyId} {
-      allow read, update, delete: if isOwner(resource.data);
+      allow read: if isSignedIn() && (resource == null || isOwner(resource.data));
+      allow update, delete: if isOwner(resource.data);
       allow create: if isNewOwner();
     }
     
     match /construction_expenses/{expenseId} {
-      allow read, update, delete: if isOwner(resource.data);
+      allow read: if isSignedIn() && (resource == null || isOwner(resource.data));
+      allow update, delete: if isOwner(resource.data);
       allow create: if isNewOwner();
     }
     
     match /maintenance_expenses/{expenseId} {
-      allow read, update, delete: if isOwner(resource.data);
+      allow read: if isSignedIn() && (resource == null || isOwner(resource.data));
+      allow update, delete: if isOwner(resource.data);
       allow create: if isNewOwner();
     }
     
     match /rental_incomes/{incomeId} {
-      allow read, update, delete: if isOwner(resource.data);
+      allow read: if isSignedIn() && (resource == null || isOwner(resource.data));
+      allow update, delete: if isOwner(resource.data);
       allow create: if isNewOwner();
     }
 
     match /construction_budget_items/{itemId} {
-      allow read, update, delete: if isOwner(resource.data);
+      allow read: if isSignedIn() && (resource == null || isOwner(resource.data));
+      allow update, delete: if isOwner(resource.data);
       allow create: if isNewOwner();
     }
 
     match /maintenance_budget_items/{itemId} {
-      allow read, update, delete: if isOwner(resource.data);
+      allow read: if isSignedIn() && (resource == null || isOwner(resource.data));
+      allow update, delete: if isOwner(resource.data);
       allow create: if isNewOwner();
     }
   }
