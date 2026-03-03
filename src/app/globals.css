@@ -116,4 +116,12 @@
   .sidebar-link-inactive {
     @apply text-muted-foreground hover:bg-muted hover:text-foreground;
   }
+
+  .premium-card {
+    @apply bg-card border-border/50 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .kpi-card {
+    @apply bg-card border-none shadow-[0_2px_10px_-3px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.12)] transition-all duration-500;
+  }
 }
