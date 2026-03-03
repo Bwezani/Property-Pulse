@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
   {
@@ -21,7 +27,18 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     header: 'Unit Price',
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('unitPrice'));
-      return <div className="font-medium">{formatCurrency(amount)}</div>;
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="font-medium cursor-help">{formatCurrency(amount)}</div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{formatFullCurrency(amount)}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     },
   },
   {
@@ -29,7 +46,18 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     header: 'Total Price',
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('totalPrice'));
-      return <div className="font-medium">{formatCurrency(amount)}</div>;
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="font-medium cursor-help">{formatCurrency(amount)}</div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{formatFullCurrency(amount)}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     },
   },
   {

@@ -16,7 +16,13 @@ import type { Property } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import { doc, deleteDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const StatusBadge = ({ status }: { status: 'Occupied' | 'Vacant' }) => {
   return (
@@ -86,7 +92,18 @@ export const columns: ColumnDef<Property>[] = [
     header: 'Investment',
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('totalInvestment'));
-      return <div className="font-medium">{formatCurrency(amount)}</div>;
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="font-medium cursor-help">{formatCurrency(amount)}</div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{formatFullCurrency(amount)}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     },
   },
   {
@@ -95,7 +112,20 @@ export const columns: ColumnDef<Property>[] = [
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('netProfit'));
       const isProfit = amount >= 0;
-      return <div className={`font-medium ${isProfit ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(amount)}</div>;
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={`font-medium cursor-help ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(amount)}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{formatFullCurrency(amount)}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     },
   },
   {
@@ -107,13 +137,11 @@ export const columns: ColumnDef<Property>[] = [
       const handleFinishConstruction = async () => {
         if (!db || !user) return;
         try {
-          // 1. Get total construction cost
           const expensesRef = collection(db, 'users', user.uid, 'construction_expenses');
           const q = query(expensesRef, where('propertyId', '==', property.id), where('userId', '==', user.uid));
           const snapshot = await getDocs(q);
           const totalCost = snapshot.docs.reduce((sum, doc) => sum + (doc.data().totalPrice || 0), 0);
 
-          // 2. Add to finished_properties
           const finishedRef = doc(db, 'users', user.uid, 'finished_properties', property.id);
           await setDoc(finishedRef, {
             ...property,
@@ -137,7 +165,6 @@ export const columns: ColumnDef<Property>[] = [
             }]
           });
 
-          // 3. Delete from construction_properties
           const constructionRef = doc(db, 'users', user.uid, 'construction_properties', property.id);
           await deleteDoc(constructionRef);
 

@@ -2,7 +2,13 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { RentalIncome } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const StatusBadge = ({ status }: { status: 'Paid' | 'Pending' | 'Overdue' }) => {
   let variant: 'default' | 'secondary' | 'destructive' = 'secondary';
@@ -32,7 +38,18 @@ export const rentalIncomeColumns: ColumnDef<RentalIncome>[] = [
         header: 'Amount',
         cell: ({ row }) => {
         const amount = parseFloat(row.getValue('amount'));
-        return <div className="font-medium">{formatCurrency(amount)}</div>;
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="font-medium cursor-help">{formatCurrency(amount)}</div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{formatFullCurrency(amount)}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
         },
     },
     {
