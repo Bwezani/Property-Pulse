@@ -34,7 +34,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { PlusCircle, Building2 } from 'lucide-react';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -54,6 +54,7 @@ type MaintenanceFormValues = z.infer<typeof formSchema>;
 export function AddMaintenanceExpenseForm({ property }: { property: Property }) {
   const [open, setOpen] = useState(false);
   const db = useFirestore();
+  const { user } = useUser();
   const today = new Date().toISOString().split('T')[0];
 
   const form = useForm<MaintenanceFormValues>({
@@ -68,7 +69,7 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
   });
 
   const onSubmit = async (values: MaintenanceFormValues) => {
-    if (!db) return;
+    if (!db || !user) return;
 
     const units = property.unitsList || [];
     const selectedUnitNames = units
@@ -76,6 +77,7 @@ export function AddMaintenanceExpenseForm({ property }: { property: Property }) 
         .map(u => u.unitName);
 
     const expenseData = {
+        userId: user.uid,
         propertyId: property.id,
         expenseType: values.expenseType,
         description: values.description,

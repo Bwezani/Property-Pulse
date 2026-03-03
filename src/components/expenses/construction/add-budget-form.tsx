@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -25,7 +26,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { addConstructionBudgetItemAction } from '../actions';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const formSchema = z.object({
   itemName: z.string().min(1, 'Item name is required.'),
@@ -44,6 +48,9 @@ export function AddConstructionBudgetItemForm({
   propertyId: string;
 }) {
   const [open, setOpen] = useState(false);
+  const db = useFirestore();
+  const { user } = useUser();
+
   const form = useForm<ConstructionBudgetFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -55,38 +62,44 @@ export function AddConstructionBudgetItemForm({
   });
 
   const onSubmit = async (values: ConstructionBudgetFormValues) => {
-    try {
-      const finalCategory =
+    if (!db || !user) return;
+
+    const finalCategory =
         values.category === 'Other'
           ? values.customCategory
           : values.category;
-  
-      await addConstructionBudgetItemAction(propertyId, {
-        ...values,
-        category: finalCategory,
+
+    const budgetData = {
+        userId: user.uid,
+        propertyId,
+        itemName: values.itemName,
+        category: finalCategory || 'Uncategorized',
+        estimatedCost: values.estimatedCost,
+        actualCost: 0,
+        createdAt: new Date().toISOString(),
+    };
+
+    addDoc(collection(db, 'construction_budget_items'), budgetData)
+      .then(() => {
+        toast({
+            title: 'Budget Item Added',
+            description: 'The construction budget item has been successfully added.',
+        });
+        form.reset({
+            itemName: '',
+            category: '',
+            customCategory: '',
+            estimatedCost: 0,
+        });
+        setOpen(false);
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: 'construction_budget_items',
+            operation: 'create',
+            requestResourceData: budgetData,
+        }));
       });
-  
-      toast({
-        title: 'Budget Item Added',
-        description:
-          'The construction budget item has been successfully added.',
-      });
-  
-      form.reset({
-        itemName: '',
-        category: '',
-        customCategory: '',
-        estimatedCost: 0,
-      });
-  
-      setOpen(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not add the budget item.',
-      });
-    }
   };
 
   return (
@@ -123,54 +136,54 @@ export function AddConstructionBudgetItemForm({
               )}
             />
             <FormField
-  control={form.control}
-  name="category"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Category</FormLabel>
-      <FormControl>
-        <select
-          {...field}
-          className="w-full border rounded-md h-9 px-3 text-sm"
-        >
-          <option value="">Select Category</option>
-          <option value="Labour">Labour</option>
-          <option value="Materials">Materials</option>
-          <option value="Transport">Transport</option>
-          <option value="Permits">Permits</option>
-          <option value="Equipment">Equipment</option>
-          <option value="Utilities">Utilities</option>
-          <option value="Other">Other</option>
-        </select>
-      </FormControl>
-      <FormMessage />
-    </FormItem>
-  )}
-/>
-{form.watch('category') === 'Other' && (
-  <FormField
-    control={form.control}
-    name="customCategory"
-    render={({ field }) => (
-      <FormItem>
-        <FormLabel>Enter Custom Category</FormLabel>
-        <FormControl>
-          <Input
-            placeholder="e.g. Site Security"
-            {...field}
-          />
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
-)}
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <FormControl>
+                    <select
+                      {...field}
+                      className="w-full border rounded-md h-9 px-3 text-sm bg-background"
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Labour">Labour</option>
+                      <option value="Materials">Materials</option>
+                      <option value="Transport">Transport</option>
+                      <option value="Permits">Permits</option>
+                      <option value="Equipment">Equipment</option>
+                      <option value="Utilities">Utilities</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {form.watch('category') === 'Other' && (
+              <FormField
+                control={form.control}
+                name="customCategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Enter Custom Category</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g. Site Security"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="estimatedCost"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Estimated Cost</FormLabel>
+                  <FormLabel>Estimated Cost (ZMW)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="e.g. 300" {...field} />
                   </FormControl>
@@ -192,4 +205,3 @@ export function AddConstructionBudgetItemForm({
     </Dialog>
   );
 }
-
