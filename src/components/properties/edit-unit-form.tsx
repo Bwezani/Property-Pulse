@@ -34,9 +34,11 @@ import {
 } from '@/components/ui/select';
 import { Edit2, User, CalendarDays } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Property, PropertyUnit } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const formSchema = z.object({
   unitName: z.string().min(1, 'Unit name is required.'),
@@ -57,6 +59,7 @@ interface EditUnitFormProps {
 export function EditUnitForm({ property, unit }: EditUnitFormProps) {
   const [open, setOpen] = useState(false);
   const db = useFirestore();
+  const { user } = useUser();
 
   const form = useForm<EditUnitFormValues>({
     resolver: zodResolver(formSchema),
@@ -71,38 +74,39 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
   });
 
   const onSubmit = async (values: EditUnitFormValues) => {
-    if (!db) return;
+    if (!db || !user) return;
 
-    try {
-      // Create new unit list with updated unit
-      const updatedUnitsList = property.unitsList?.map((u) => {
-        if (u.id === unit.id) {
-          return {
-            ...u,
-            ...values,
-            tenantName: values.status === 'Occupied' ? values.tenantName || '' : '',
-            tenantContact: values.status === 'Occupied' ? values.tenantContact || '' : '',
-          };
-        }
-        return u;
-      }) || [];
+    const updatedUnitsList = property.unitsList?.map((u) => {
+      if (u.id === unit.id) {
+        return {
+          ...u,
+          ...values,
+          tenantName: values.status === 'Occupied' ? values.tenantName || '' : '',
+          tenantContact: values.status === 'Occupied' ? values.tenantContact || '' : '',
+        };
+      }
+      return u;
+    }) || [];
 
-      await updateDoc(doc(db, 'finished_properties', property.id), {
-        unitsList: updatedUnitsList,
-      });
+    const docRef = doc(db, 'users', user.uid, 'finished_properties', property.id);
 
+    updateDoc(docRef, {
+      unitsList: updatedUnitsList,
+    })
+    .then(() => {
       toast({
         title: 'Unit Updated',
         description: `Details for ${values.unitName} have been saved.`,
       });
       setOpen(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not update unit details.',
-      });
-    }
+    })
+    .catch(async () => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: { unitsList: updatedUnitsList }
+      }));
+    });
   };
 
   return (

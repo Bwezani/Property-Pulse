@@ -1,13 +1,15 @@
+
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
 import { AddFinishedPropertyWrapper } from '@/components/properties/add-finished-property-wrapper';
 import { Home, PiggyBank, BadgePercent, TrendingUp, Loader2 } from 'lucide-react';
-import type { Property } from '@/lib/types';
+import type { Property, ConstructionExpense, RentalIncome, MaintenanceExpense } from '@/lib/types';
 import { ImportFinishedProperties } from '@/components/properties/import-finished-properties';
+import { calculatePropertyFinancials } from '@/lib/financials';
 
 export default function FinishedPropertiesDashboardPage() {
   const db = useFirestore();
@@ -15,13 +17,28 @@ export default function FinishedPropertiesDashboardPage() {
 
   const finishedPropertiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(
-      collection(db, 'finished_properties'),
-      where('userId', '==', user.uid)
-    );
+    return collection(db, 'users', user.uid, 'finished_properties');
   }, [db, user]);
+  const { data: rawProperties, isLoading: isDataLoading } = useCollection<Property>(finishedPropertiesQuery);
 
-  const { data: properties, isLoading: isDataLoading } = useCollection<Property>(finishedPropertiesQuery);
+  // Fetch related data for calculation
+  const expensesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return collection(db, 'users', user.uid, 'construction_expenses');
+  }, [db, user]);
+  const { data: allExpenses } = useCollection<ConstructionExpense>(expensesQuery);
+
+  const incomesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return collection(db, 'users', user.uid, 'rental_incomes');
+  }, [db, user]);
+  const { data: allIncomes } = useCollection<RentalIncome>(incomesQuery);
+
+  const maintenanceQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return collection(db, 'users', user.uid, 'maintenance_expenses');
+  }, [db, user]);
+  const { data: allMaintenance } = useCollection<MaintenanceExpense>(maintenanceQuery);
 
   if (isAuthLoading || isDataLoading) {
     return (
@@ -31,7 +48,14 @@ export default function FinishedPropertiesDashboardPage() {
     );
   }
 
-  const finishedProperties = properties || [];
+  const finishedProperties = (rawProperties || []).map(p => 
+    calculatePropertyFinancials(
+      p,
+      (allExpenses || []).filter(e => e.propertyId === p.id),
+      (allIncomes || []).filter(i => i.propertyId === p.id),
+      (allMaintenance || []).filter(m => m.propertyId === p.id)
+    )
+  );
 
   const totalFinishedProperties = finishedProperties.length;
   const occupiedCount = finishedProperties.filter(

@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { MonthlySummaryChart } from '@/components/dashboard/reports/monthly-summary-chart';
 import { ProfitLossChart } from '@/components/dashboard/reports/profit-loss-chart';
 import { calculatePropertyFinancials } from '@/lib/financials';
@@ -12,31 +13,31 @@ export default function ReportsPage() {
     const db = useFirestore();
     const { user, isUserLoading: isAuthLoading } = useUser();
 
-    // Fetch user-specific properties
+    // Fetch user-specific properties from nested collection
     const finishedPropsQuery = useMemoFirebase(() => {
         if (!db || !user) return null;
-        return query(collection(db, 'finished_properties'), where('userId', '==', user.uid));
+        return collection(db, 'users', user.uid, 'finished_properties');
     }, [db, user]);
     const { data: finishedProps, isLoading: isPropsLoading } = useCollection<Property>(finishedPropsQuery);
 
-    // Fetch user-specific rental incomes
+    // Fetch user-specific rental incomes from nested collection
     const incomesQuery = useMemoFirebase(() => {
         if (!db || !user) return null;
-        return query(collection(db, 'rental_incomes'), where('userId', '==', user.uid));
+        return collection(db, 'users', user.uid, 'rental_incomes');
     }, [db, user]);
     const { data: rentalIncomes, isLoading: isIncomesLoading } = useCollection<RentalIncome>(incomesQuery);
 
-    // Fetch user-specific maintenance expenses
+    // Fetch user-specific maintenance expenses from nested collection
     const maintenanceQuery = useMemoFirebase(() => {
         if (!db || !user) return null;
-        return query(collection(db, 'maintenance_expenses'), where('userId', '==', user.uid));
+        return collection(db, 'users', user.uid, 'maintenance_expenses');
     }, [db, user]);
     const { data: maintenanceExpenses, isLoading: isMaintenanceLoading } = useCollection<MaintenanceExpense>(maintenanceQuery);
 
-    // Fetch user-specific construction expenses
+    // Fetch user-specific construction expenses from nested collection
     const constructionQuery = useMemoFirebase(() => {
         if (!db || !user) return null;
-        return query(collection(db, 'construction_expenses'), where('userId', '==', user.uid));
+        return collection(db, 'users', user.uid, 'construction_expenses');
     }, [db, user]);
     const { data: constructionExpenses, isLoading: isConstructionLoading } = useCollection<ConstructionExpense>(constructionQuery);
 
