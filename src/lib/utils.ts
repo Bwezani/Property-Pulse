@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Formats a number as a compact currency string.
- * Increased precision to 2 decimal places to minimize rounding error in the summary view.
+ * Updated to exactly one decimal place for a clean yet descriptive look.
  */
 export function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -15,7 +15,8 @@ export function formatCurrency(amount: number) {
     currency: 'ZMW',
     notation: 'compact',
     compactDisplay: 'short',
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
   }).format(amount);
 }
 
