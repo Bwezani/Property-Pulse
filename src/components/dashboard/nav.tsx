@@ -28,22 +28,23 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
 
   return (
-    <>
-      {navItems.map(({ href, label, icon: Icon }) => (
-        <Link
-          key={href}
-          href={href}
-          className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-            {
-              'bg-muted text-primary': pathname.startsWith(href),
-            }
-          )}
-        >
-          <Icon className="h-4 w-4" />
-          {label}
-        </Link>
-      ))}
-    </>
+    <div className="flex flex-col gap-1.5 w-full">
+      {navItems.map(({ href, label, icon: Icon }) => {
+        const isActive = pathname.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              'sidebar-link',
+              isActive ? 'sidebar-link-active' : 'sidebar-link-inactive'
+            )}
+          >
+            <Icon className={cn("h-4.5 w-4.5", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+            {label}
+          </Link>
+        );
+      })}
+    </div>
   );
 }
