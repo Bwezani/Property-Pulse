@@ -83,7 +83,7 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
                         {isOverBudget && <AlertTriangle className="h-3 w-3 text-destructive animate-pulse" />}
                      </div>
                      <span className={`font-bold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                        {budgetProgress.toFixed(0)}%
+                        {budgetProgress.toFixed(1)}%
                      </span>
                   </div>
                   <Progress 
@@ -101,7 +101,7 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
                               </p>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{formatFullCurrency(spent)}</p>
+                              <p>Actual Spent: {formatFullCurrency(spent)}</p>
                             </TooltipContent>
                           </Tooltip>
                       </div>
@@ -114,7 +114,7 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
                               </p>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{formatFullCurrency(budget)}</p>
+                              <p>Estimated Budget: {formatFullCurrency(budget)}</p>
                             </TooltipContent>
                           </Tooltip>
                       </div>

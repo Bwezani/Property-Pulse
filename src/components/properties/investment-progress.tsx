@@ -38,7 +38,7 @@ export function InvestmentProgress({ totalInvestment, rentReceived }: Investment
               <span className="font-bold cursor-help">
                   {isProfit 
                    ? `+${formatCurrency(profitAmount)}`
-                   : `${Math.min(100, progress).toFixed(0)}%`
+                   : `${Math.min(100, progress).toFixed(1)}%`
                   }
               </span>
             </TooltipTrigger>
@@ -56,7 +56,7 @@ export function InvestmentProgress({ totalInvestment, rentReceived }: Investment
               <span className="cursor-help">{formatCurrency(rentReceived)}</span>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Total Rent: {formatFullCurrency(rentReceived)}</p>
+              <p>Total Rent Received: {formatFullCurrency(rentReceived)}</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>

@@ -56,14 +56,19 @@ import type {
   MaintenanceExpense,
   ConstructionBudgetItem
 } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export default function PropertyDetailPage() {
   const { id } = useParams() as { id: string };
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Try to find the property in either user-specific sub-collection
   const finishedRef = useMemoFirebase(() => {
     if (!db || !id || !user) return null;
     return doc(db, 'users', user.uid, 'finished_properties', id);
@@ -76,7 +81,6 @@ export default function PropertyDetailPage() {
   }, [db, id, user]);
   const { data: constructionProp, isLoading: isConstructionLoading } = useDoc<Property>(constructionRef);
 
-  // User-specific data queries from their private branch
   const qExpenses = useMemoFirebase(() => {
     if (!db || !id || !user) return null;
     return query(
@@ -151,14 +155,26 @@ export default function PropertyDetailPage() {
     </div>
   );
 
-  const FinancialItem = ({ label, value, isPositive }: { label: string, value: string, isPositive?: boolean }) => (
+  const FinancialItem = ({ label, value, fullValue, isPositive }: { label: string, value: string, fullValue: string, isPositive?: boolean }) => (
     <div>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={`font-semibold text-lg ${isPositive === true ? 'text-green-600' : isPositive === false ? 'text-red-600' : ''}`}>
-        {value}
-      </p>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <p className={`font-semibold text-lg cursor-help ${isPositive === true ? 'text-green-600' : isPositive === false ? 'text-red-600' : ''}`}>
+              {value}
+            </p>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{fullValue}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
+
+  const recoveryProgress = calculatedProperty.totalInvestment > 0 ? (calculatedProperty.totalRentReceived / calculatedProperty.totalInvestment) * 100 : 0;
+  const budgetUtilization = calculatedProperty.estimatedBudget ? (calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100 : 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
@@ -193,24 +209,26 @@ export default function PropertyDetailPage() {
                 <KpiCard
                   title="Net Profit"
                   value={formatCurrency(calculatedProperty.netProfit)}
+                  tooltipValue={formatFullCurrency(calculatedProperty.netProfit)}
                   helperText={calculatedProperty.netProfit >= 0 ? 'Profit after all costs' : 'Loss after all costs'}
                   Icon={TrendingUp}
                 />
                 <KpiCard
                   title="Occupancy"
                   value={totalUnits > 1 ? `${occupiedUnits} / ${totalUnits} Units` : calculatedProperty.status}
-                  helperText={totalUnits > 1 ? `${((occupiedUnits / totalUnits) * 100).toFixed(0)}% Occupancy rate` : `Tenant: ${calculatedProperty.tenantName || 'None'}`}
+                  helperText={totalUnits > 1 ? `${((occupiedUnits / totalUnits) * 100).toFixed(1)}% Occupancy rate` : `Tenant: ${calculatedProperty.tenantName || 'None'}`}
                   Icon={Building}
                 />
                 <KpiCard
                   title="Investment Recovery"
-                  value={calculatedProperty.totalInvestment > 0 ? `${((calculatedProperty.totalRentReceived / calculatedProperty.totalInvestment) * 100).toFixed(0)}%` : '0%'}
+                  value={`${recoveryProgress.toFixed(1)}%`}
                   helperText="ROI progress"
                   Icon={BadgePercent}
                 />
                 <KpiCard
                   title="Total Rent Received"
                   value={formatCurrency(calculatedProperty.totalRentReceived)}
+                  tooltipValue={formatFullCurrency(calculatedProperty.totalRentReceived)}
                   helperText="Lifetime gross rental income"
                   Icon={PiggyBank}
                 />
@@ -220,18 +238,20 @@ export default function PropertyDetailPage() {
                 <KpiCard
                   title="Total Spent"
                   value={formatCurrency(calculatedProperty.totalConstructionCost)}
+                  tooltipValue={formatFullCurrency(calculatedProperty.totalConstructionCost)}
                   helperText="Total project costs to date"
                   Icon={Banknote}
                 />
                 <KpiCard
                   title="Project Budget"
                   value={formatCurrency(calculatedProperty.estimatedBudget || 0)}
+                  tooltipValue={formatFullCurrency(calculatedProperty.estimatedBudget || 0)}
                   helperText="Initial projected cost"
                   Icon={Wallet}
                 />
                 <KpiCard
                   title="Budget Utilization"
-                  value={calculatedProperty.estimatedBudget ? `${((calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100).toFixed(0)}%` : '0%'}
+                  value={`${budgetUtilization.toFixed(1)}%`}
                   helperText="Percentage of budget used"
                   Icon={BadgePercent}
                 />
@@ -339,30 +359,34 @@ export default function PropertyDetailPage() {
                 <div className="space-y-2">
                    <div className="flex justify-between text-xs font-medium">
                       <span className="text-muted-foreground">Project Spending</span>
-                      <span>{calculatedProperty.estimatedBudget ? ((calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100).toFixed(0) : 0}%</span>
+                      <span>{budgetUtilization.toFixed(1)}%</span>
                    </div>
-                   <Progress value={calculatedProperty.estimatedBudget ? Math.min(100, (calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100) : 0} className="h-2" />
+                   <Progress value={Math.min(100, budgetUtilization)} className="h-2" />
                 </div>
               )}
               <div className="space-y-4 pt-4 border-t">
                 <FinancialItem
                   label={calculatedProperty.type === 'Finished' ? 'Initial Investment' : 'Actual Spent'}
                   value={formatCurrency(calculatedProperty.type === 'Finished' ? calculatedProperty.totalInvestment : calculatedProperty.totalConstructionCost)}
+                  fullValue={formatFullCurrency(calculatedProperty.type === 'Finished' ? calculatedProperty.totalInvestment : calculatedProperty.totalConstructionCost)}
                 />
                 {calculatedProperty.type === 'Finished' && (
                   <>
                     <FinancialItem
                       label="Total Rent Received"
                       value={formatCurrency(calculatedProperty.totalRentReceived)}
+                      fullValue={formatFullCurrency(calculatedProperty.totalRentReceived)}
                     />
                     <FinancialItem
                       label="Maintenance Costs"
                       value={formatCurrency(calculatedProperty.totalMaintenanceCost)}
+                      fullValue={formatFullCurrency(calculatedProperty.totalMaintenanceCost)}
                     />
                     <div className="pt-2">
                       <FinancialItem
                         label="Net Profit"
                         value={formatCurrency(calculatedProperty.netProfit)}
+                        fullValue={formatFullCurrency(calculatedProperty.netProfit)}
                         isPositive={calculatedProperty.netProfit >= 0}
                       />
                     </div>
@@ -372,6 +396,7 @@ export default function PropertyDetailPage() {
                   <FinancialItem
                     label="Remaining Budget"
                     value={formatCurrency(Math.max(0, (calculatedProperty.estimatedBudget || 0) - calculatedProperty.totalConstructionCost))}
+                    fullValue={formatFullCurrency(Math.max(0, (calculatedProperty.estimatedBudget || 0) - calculatedProperty.totalConstructionCost))}
                   />
                 )}
               </div>

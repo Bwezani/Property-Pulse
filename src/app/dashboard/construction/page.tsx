@@ -16,7 +16,7 @@ export default function ConstructionDashboardPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Fetch all construction properties for current user from their private collection
+  // Fetch all construction properties for current user
   const constructionPropsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'construction_properties'), where('userId', '==', user.uid));
@@ -80,6 +80,8 @@ export default function ConstructionDashboardPage() {
     category,
     amount,
   }));
+
+  const budgetUtilization = totalPlannedBudget > 0 ? (totalConstructionCost / totalPlannedBudget) * 100 : 0;
 
   return (
     <div className="flex-1 space-y-6">
@@ -148,18 +150,18 @@ export default function ConstructionDashboardPage() {
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
               You are currently managing <strong>{totalActiveProjects}</strong> project(s). 
-              {totalPlannedBudget > 0 ? ` Budget utilization is currently at ${((totalConstructionCost / totalPlannedBudget) * 100).toFixed(1)}%.` : ''}
+              {totalPlannedBudget > 0 ? ` Budget utilization is currently at ${budgetUtilization.toFixed(1)}%.` : ''}
             </p>
             <div className="space-y-4">
                <div className="space-y-2">
                   <div className="flex justify-between text-xs font-medium">
                     <span>Portfolio Utilization</span>
-                    <span>{totalPlannedBudget > 0 ? ((totalConstructionCost / totalPlannedBudget) * 100).toFixed(0) : 0}%</span>
+                    <span>{budgetUtilization.toFixed(1)}%</span>
                   </div>
                   <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-primary transition-all" 
-                      style={{ width: `${Math.min(100, totalPlannedBudget > 0 ? (totalConstructionCost / totalPlannedBudget) * 100 : 0)}%` }} 
+                      style={{ width: `${Math.min(100, budgetUtilization)}%` }} 
                     />
                   </div>
                </div>

@@ -86,6 +86,8 @@ export function MonthlySummaryChart({ incomes, expenses }: MonthlySummaryChartPr
                 return new Intl.NumberFormat('en-US', {
                   notation: 'compact',
                   compactDisplay: 'short',
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
                 }).format(value);
               }}
             />
