@@ -1,3 +1,4 @@
+
 'use client';
 import type { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
@@ -13,8 +14,9 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, ArrowUpDown, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Property } from '@/lib/types';
-import { finishConstructionAction, deletePropertyAction } from './actions';
 import { toast } from '@/hooks/use-toast';
+import { getFirestore, doc, deleteDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
 
 const StatusBadge = ({ status }: { status: 'Occupied' | 'Vacant' }) => {
   return (
@@ -31,38 +33,6 @@ const TypeBadge = ({ type }: { type: 'Finished' | 'Under Construction' }) => {
     </Badge>
   );
 };
-
-async function handleFinishConstruction(property: Property) {
-    try {
-      await finishConstructionAction(property);
-      toast({
-        title: "Construction Finished!",
-        description: `${property.name} has been moved to Finished Properties.`,
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not finish construction.',
-      });
-    }
-}
-
-async function handleDeleteProperty(property: Property) {
-  try {
-    await deletePropertyAction(property.id);
-    toast({
-      title: 'Property Deleted',
-      description: `${property.name} has been removed.`,
-    });
-  } catch (error) {
-    toast({
-      variant: 'destructive',
-      title: 'Error',
-      description: 'Could not delete the property.',
-    });
-  }
-}
 
 export const columns: ColumnDef<Property>[] = [
   {
@@ -144,6 +114,62 @@ export const columns: ColumnDef<Property>[] = [
     id: 'actions',
     cell: ({ row }) => {
       const property = row.original;
+      const { firestore: db, user } = useFirebase();
+
+      const handleFinishConstruction = async () => {
+        if (!db || !user) return;
+        try {
+          // 1. Get total construction cost
+          const expensesRef = collection(db, 'users', user.uid, 'construction_expenses');
+          const q = query(expensesRef, where('propertyId', '==', property.id));
+          const snapshot = await getDocs(q);
+          const totalCost = snapshot.docs.reduce((sum, doc) => sum + (doc.data().totalPrice || 0), 0);
+
+          // 2. Add to finished_properties
+          const finishedRef = doc(db, 'users', user.uid, 'finished_properties', property.id);
+          await setDoc(finishedRef, {
+            ...property,
+            type: 'Finished',
+            constructionStage: 'Completed',
+            totalInvestment: totalCost,
+            status: 'Vacant',
+            monthlyRent: 0,
+            paymentDueDay: 1,
+            tenantName: '',
+            tenantContact: '',
+            units: 1,
+            unitsList: [{
+              id: `unit-${Date.now()}`,
+              unitName: 'Main Unit',
+              status: 'Vacant',
+              tenantName: '',
+              tenantContact: '',
+              monthlyRent: 0,
+              paymentDueDay: 1
+            }]
+          });
+
+          // 3. Delete from construction_properties
+          const constructionRef = doc(db, 'users', user.uid, 'construction_properties', property.id);
+          await deleteDoc(constructionRef);
+
+          toast({ title: "Project Completed", description: `${property.name} is now a finished property.` });
+        } catch (error) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not update property status.' });
+        }
+      };
+
+      const handleDeleteProperty = async () => {
+        if (!db || !user) return;
+        try {
+          const colName = property.type === 'Finished' ? 'finished_properties' : 'construction_properties';
+          const docRef = doc(db, 'users', user.uid, colName, property.id);
+          await deleteDoc(docRef);
+          toast({ title: 'Property Deleted', description: `${property.name} has been removed.` });
+        } catch (error) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the property.' });
+        }
+      };
 
       return (
         <DropdownMenu>
@@ -158,16 +184,15 @@ export const columns: ColumnDef<Property>[] = [
             <DropdownMenuItem asChild>
               <Link href={`/dashboard/properties/${property.id}`}>View Details</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>Edit Property</DropdownMenuItem>
             {property.type === 'Under Construction' && (
-              <DropdownMenuItem onClick={() => handleFinishConstruction(property)}>
+              <DropdownMenuItem onClick={handleFinishConstruction}>
                 Mark as Finished
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive"
-              onClick={() => handleDeleteProperty(property)}
+              onClick={handleDeleteProperty}
             >
               Delete Property
             </DropdownMenuItem>

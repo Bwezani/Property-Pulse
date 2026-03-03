@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
@@ -5,7 +6,8 @@ import type { MaintenanceBudgetItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { UpdateMaintenanceBudgetActualForm } from './update-actual-form';
-import { deleteMaintenanceBudgetItemAction } from '../actions';
+import { useFirebase } from '@/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 export const maintenanceBudgetColumns: ColumnDef<MaintenanceBudgetItem>[] = [
   {
@@ -62,19 +64,16 @@ export const maintenanceBudgetColumns: ColumnDef<MaintenanceBudgetItem>[] = [
     header: '',
     cell: ({ row }) => {
       const item = row.original;
+      const { firestore: db, user } = useFirebase();
+
       const handleDelete = async () => {
+        if (!db || !user) return;
         try {
-          await deleteMaintenanceBudgetItemAction(item.propertyId, item.id);
-          toast({
-            title: 'Item Deleted',
-            description: `"${item.itemName}" has been removed from the budget.`,
-          });
+          const docRef = doc(db, 'users', user.uid, 'maintenance_budget_items', item.id);
+          await deleteDoc(docRef);
+          toast({ title: 'Item Deleted', description: 'Budget item removed.' });
         } catch (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Could not delete the budget item.',
-          });
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete item.' });
         }
       };
 
@@ -97,4 +96,3 @@ export const maintenanceBudgetColumns: ColumnDef<MaintenanceBudgetItem>[] = [
     },
   },
 ];
-

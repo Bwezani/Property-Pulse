@@ -31,6 +31,7 @@
       "description": "Details for finished or under-construction properties.",
       "properties": {
         "id": { "type": "string" },
+        "userId": { "type": "string" },
         "name": { "type": "string" },
         "code": { "type": "string" },
         "categoryId": { "type": "string" },
@@ -42,23 +43,21 @@
         "monthlyRent": { "type": "number" },
         "paymentDueDay": { "type": "number" },
         "totalInvestment": { "type": "number" },
-        "units": { "type": "number", "description": "Number of units for multi-unit properties" },
+        "units": { "type": "number" },
         "unitsList": {
           "type": "array",
           "items": { "$ref": "#/backend/entities/PropertyUnit" }
         },
         "constructionStage": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "members": { "type": "object" },
-        "tenantName": { "type": "string" },
-        "tenantContact": { "type": "string" }
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "code", "location", "type", "createdAt", "members", "categoryId"]
+      "required": ["name", "code", "location", "type", "createdAt", "userId"]
     },
     "ConstructionExpense": {
       "title": "ConstructionExpense",
       "type": "object",
       "properties": {
+        "userId": { "type": "string" },
         "propertyId": { "type": "string" },
         "itemName": { "type": "string" },
         "quantity": { "type": "number" },
@@ -72,29 +71,27 @@
       "title": "MaintenanceExpense",
       "type": "object",
       "properties": {
+        "userId": { "type": "string" },
         "propertyId": { "type": "string" },
         "expenseType": { "type": "string", "enum": ["Repair", "Utility", "Cleaning", "Other"] },
         "description": { "type": "string" },
         "amount": { "type": "number" },
         "date": { "type": "string", "format": "date-time" },
         "vendor": { "type": "string" },
-        "unitIds": { "type": "array", "items": { "type": "string" } },
-        "unitNames": { "type": "array", "items": { "type": "string" } }
+        "unitIds": { "type": "array", "items": { "type": "string" } }
       }
     },
     "RentalIncome": {
       "title": "RentalIncome",
       "type": "object",
       "properties": {
+        "userId": { "type": "string" },
         "propertyId": { "type": "string" },
         "unitId": { "type": "string" },
-        "unitName": { "type": "string" },
-        "tenantName": { "type": "string" },
         "amount": { "type": "number" },
         "paymentDate": { "type": "string", "format": "date-time" },
         "status": { "type": "string", "enum": ["Paid", "Pending", "Overdue"] },
-        "monthKey": { "type": "string" },
-        "paymentMethod": { "type": "string" }
+        "monthKey": { "type": "string" }
       }
     }
   },
@@ -123,6 +120,14 @@
     "/users/{userId}/rental_incomes/{incomeId}": {
       "schema": { "$ref": "#/backend/entities/RentalIncome" },
       "description": "Rental income records."
+    },
+    "/users/{userId}/construction_budget_items/{itemId}": {
+      "schema": { "type": "object" },
+      "description": "Construction budget planning items."
+    },
+    "/users/{userId}/maintenance_budget_items/{itemId}": {
+      "schema": { "type": "object" },
+      "description": "Maintenance budget planning items."
     }
   }
 }

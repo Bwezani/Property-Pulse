@@ -1,9 +1,11 @@
+
 'use client';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ConstructionExpense } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { deleteConstructionExpenseAction } from '../actions';
+import { useFirebase } from '@/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
   {
@@ -52,19 +54,16 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     header: '',
     cell: ({ row }) => {
       const expense = row.original;
+      const { firestore: db, user } = useFirebase();
+
       const handleDelete = async () => {
+        if (!db || !user) return;
         try {
-          await deleteConstructionExpenseAction(expense.propertyId, expense.id);
-          toast({
-            title: 'Expense Deleted',
-            description: `"${expense.itemName}" has been removed.`,
-          });
+          const docRef = doc(db, 'users', user.uid, 'construction_expenses', expense.id);
+          await deleteDoc(docRef);
+          toast({ title: 'Expense Deleted', description: 'Record removed successfully.' });
         } catch (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Could not delete the expense.',
-          });
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete record.' });
         }
       };
 

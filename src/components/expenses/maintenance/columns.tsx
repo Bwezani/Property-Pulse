@@ -4,8 +4,9 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { MaintenanceExpense } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { deleteMaintenanceExpenseAction } from '../actions';
 import { Badge } from '@/components/ui/badge';
+import { useFirebase } from '@/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 export const maintenanceColumns: ColumnDef<MaintenanceExpense>[] = [
   {
@@ -60,19 +61,16 @@ export const maintenanceColumns: ColumnDef<MaintenanceExpense>[] = [
     header: '',
     cell: ({ row }) => {
       const expense = row.original;
+      const { firestore: db, user } = useFirebase();
+
       const handleDelete = async () => {
+        if (!db || !user) return;
         try {
-          await deleteMaintenanceExpenseAction(expense.propertyId, expense.id);
-          toast({
-            title: 'Expense Deleted',
-            description: `"${expense.description}" has been removed.`,
-          });
+          const docRef = doc(db, 'users', user.uid, 'maintenance_expenses', expense.id);
+          await deleteDoc(docRef);
+          toast({ title: 'Expense Deleted', description: 'Record removed successfully.' });
         } catch (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Could not delete the expense.',
-          });
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete record.' });
         }
       };
 
@@ -84,7 +82,6 @@ export const maintenanceColumns: ColumnDef<MaintenanceExpense>[] = [
             className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={handleDelete}
           >
-            <span className="sr-only">Delete</span>
             Delete
           </Button>
         </div>
