@@ -83,7 +83,7 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
                         {isOverBudget && <AlertTriangle className="h-3 w-3 text-destructive animate-pulse" />}
                      </div>
                      <span className={`font-bold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                        {budgetProgress.toFixed(1)}%
+                        {budgetProgress.toFixed(2)}%
                      </span>
                   </div>
                   <Progress 
