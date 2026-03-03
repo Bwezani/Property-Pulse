@@ -173,8 +173,12 @@ export default function PropertyDetailPage() {
     </div>
   );
 
-  const recoveryProgress = calculatedProperty.totalInvestment > 0 ? (calculatedProperty.totalRentReceived / calculatedProperty.totalInvestment) * 100 : 0;
-  const budgetUtilization = calculatedProperty.estimatedBudget ? (calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100 : 0;
+  // Truncate percentages without rounding
+  const recoveryProgressRaw = calculatedProperty.totalInvestment > 0 ? (calculatedProperty.totalRentReceived / calculatedProperty.totalInvestment) * 100 : 0;
+  const recoveryProgress = Math.floor(recoveryProgressRaw * 10) / 10;
+  
+  const budgetUtilizationRaw = calculatedProperty.estimatedBudget ? (calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100 : 0;
+  const budgetUtilization = Math.floor(budgetUtilizationRaw * 10) / 10;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">

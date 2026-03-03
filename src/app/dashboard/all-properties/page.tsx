@@ -82,7 +82,10 @@ export default function AllPropertiesPage() {
   
   const totalInvestment = calculatedProperties.reduce((acc, p) => acc + (p.totalInvestment || 0), 0);
   const totalRent = calculatedProperties.reduce((acc, p) => acc + (p.totalRentReceived || 0), 0);
-  const portfolioRoi = totalInvestment > 0 ? (totalRent / totalInvestment) * 100 : 0;
+  
+  // Truncate portfolio ROI without rounding up
+  const portfolioRoiRaw = totalInvestment > 0 ? (totalRent / totalInvestment) * 100 : 0;
+  const portfolioRoi = Math.floor(portfolioRoiRaw * 10) / 10;
 
   return (
     <div className="space-y-6">

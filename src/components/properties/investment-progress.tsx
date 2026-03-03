@@ -17,7 +17,10 @@ export function InvestmentProgress({ totalInvestment, rentReceived }: Investment
     return <div className="text-sm text-muted-foreground">No investment data.</div>;
   }
 
-  const progress = (rentReceived / totalInvestment) * 100;
+  // Truncate percentage to 1 decimal place without rounding up
+  const progressRaw = (rentReceived / totalInvestment) * 100;
+  const progress = Math.floor(progressRaw * 10) / 10;
+  
   const isProfit = progress >= 100;
 
   let colorClass = 'bg-red-500'; // Loss
@@ -38,7 +41,7 @@ export function InvestmentProgress({ totalInvestment, rentReceived }: Investment
               <span className="font-bold cursor-help">
                   {isProfit 
                    ? `+${formatCurrency(profitAmount)}`
-                   : `${Math.min(100, progress).toFixed(2)}%`
+                   : `${Math.min(100, progress).toFixed(1)}%`
                   }
               </span>
             </TooltipTrigger>

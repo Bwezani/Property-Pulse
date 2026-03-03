@@ -22,7 +22,11 @@ interface PropertyListItemProps {
 export function PropertyListItem({ property }: PropertyListItemProps) {
   const budget = property.estimatedBudget || 0;
   const spent = property.totalConstructionCost || 0;
-  const budgetProgress = budget > 0 ? (spent / budget) * 100 : 0;
+  
+  // Truncate percentage to 1 decimal place without rounding
+  const budgetProgressRaw = budget > 0 ? (spent / budget) * 100 : 0;
+  const budgetProgress = Math.floor(budgetProgressRaw * 10) / 10;
+  
   const isOverBudget = budget > 0 && spent > budget;
 
   return (
@@ -83,7 +87,7 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
                         {isOverBudget && <AlertTriangle className="h-3 w-3 text-destructive animate-pulse" />}
                      </div>
                      <span className={`font-bold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                        {budgetProgress.toFixed(2)}%
+                        {budgetProgress.toFixed(1)}%
                      </span>
                   </div>
                   <Progress 

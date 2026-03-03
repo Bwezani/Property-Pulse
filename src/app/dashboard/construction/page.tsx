@@ -81,7 +81,9 @@ export default function ConstructionDashboardPage() {
     amount,
   }));
 
-  const budgetUtilization = totalPlannedBudget > 0 ? (totalConstructionCost / totalPlannedBudget) * 100 : 0;
+  // Truncate budget utilization without rounding up
+  const budgetUtilizationRaw = totalPlannedBudget > 0 ? (totalConstructionCost / totalPlannedBudget) * 100 : 0;
+  const budgetUtilization = Math.floor(budgetUtilizationRaw * 10) / 10;
 
   return (
     <div className="flex-1 space-y-6">
