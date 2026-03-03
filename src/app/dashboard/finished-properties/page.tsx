@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
 import { AddFinishedPropertyWrapper } from '@/components/properties/add-finished-property-wrapper';
@@ -14,12 +13,11 @@ export default function FinishedPropertiesDashboardPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Simplifying the query to isolate the permission issue. 
-  // We'll add back 'isDeleted' and 'orderBy' once we confirm basic connectivity works.
   const finishedPropertiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
-      collection(db, 'finished_properties')
+      collection(db, 'finished_properties'),
+      where('userId', '==', user.uid)
     );
   }, [db, user]);
 
@@ -54,9 +52,12 @@ export default function FinishedPropertiesDashboardPage() {
   return (
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-3xl font-headline font-bold">
-          Finished Properties Dashboard
-        </h1>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-headline font-bold">
+            Finished Properties
+          </h1>
+          <p className="text-sm text-muted-foreground">Portfolio for {user?.email}</p>
+        </div>
 
         <div className="flex gap-2">
           <ImportFinishedProperties />
@@ -117,7 +118,7 @@ export default function FinishedPropertiesDashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-10 border rounded-lg">
+          <div className="text-center py-10 border rounded-lg bg-muted/5 border-dashed">
             <p className="text-muted-foreground">
               No finished properties found. Start by adding one!
             </p>

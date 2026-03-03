@@ -36,6 +36,8 @@ import { PlusCircle, Info, Building2, User, Home, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const CATEGORIES = [
   { id: 'stand-alone', name: 'Stand Alone' },
@@ -114,24 +116,14 @@ export function AddFinishedPropertyForm() {
   const unitsCountRaw = form.watch('units');
   const isMultiUnit = MULTI_UNIT_CATEGORIES.includes(categoryId);
 
-  // Sync unitsList with units count
   useEffect(() => {
     if (!isMultiUnit) return;
-
     const unitsCount = Math.max(1, Number(unitsCountRaw) || 1);
     const currentCount = fields.length;
-
     if (unitsCount > currentCount) {
       for (let i = currentCount; i < unitsCount; i++) {
         append(
-          {
-            unitName: `Unit ${i + 1}`,
-            status: 'Vacant',
-            monthlyRent: 0,
-            paymentDueDay: 1,
-            tenantName: '',
-            tenantContact: '',
-          },
+          { unitName: `Unit ${i + 1}`, status: 'Vacant', monthlyRent: 0, paymentDueDay: 1, tenantName: '', tenantContact: '' },
           { shouldFocus: false }
         );
       }
@@ -144,72 +136,56 @@ export function AddFinishedPropertyForm() {
 
   const onSubmit = async (values: FinishedPropertyFormValues) => {
     if (!db || !user) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'You must be signed in to add a property.',
-      });
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be signed in to add a property.' });
       return;
     }
 
-    try {
-      const finalUnitsList = isMultiUnit
-        ? values.unitsList
-        : [
-            {
-              unitName: 'Main Unit',
-              status: values.status || 'Vacant',
-              monthlyRent: values.monthlyRent || 0,
-              paymentDueDay: values.paymentDueDay || 1,
-              tenantName: values.tenantName || '',
-              tenantContact: values.tenantContact || '',
-            },
-          ];
+    const finalUnitsList = isMultiUnit
+      ? values.unitsList
+      : [{ unitName: 'Main Unit', status: values.status || 'Vacant', monthlyRent: values.monthlyRent || 0, paymentDueDay: values.paymentDueDay || 1, tenantName: values.tenantName || '', tenantContact: values.tenantContact || '' }];
 
-      await addDoc(collection(db, 'finished_properties'), {
-        name: values.name,
-        code: `FP-${Date.now().toString().slice(-6)}`,
-        categoryId: values.categoryId,
-        location: values.location,
-        size: values.size,
-        description: '',
-        type: 'Finished',
-        imageId: 'default-img',
-        totalInvestment: values.totalInvestment,
-        units: isMultiUnit ? values.units : 1,
-        unitsList: finalUnitsList.map((u, i) => ({
-          ...u,
-          id: `unit-${i + 1}-${Date.now()}`,
-        })),
-        createdAt: new Date().toISOString(),
-        isDeleted: false,
-        members: { [user.uid]: 'admin' },
-        status: !isMultiUnit ? values.status : 'Occupied',
-        monthlyRent: !isMultiUnit ? values.monthlyRent : 0,
-        paymentDueDay: !isMultiUnit ? values.paymentDueDay : 1,
-        tenantName: !isMultiUnit ? values.tenantName : '',
-        tenantContact: !isMultiUnit ? values.tenantContact : '',
-        totalConstructionCost: 0,
-        totalRentReceived: 0,
-        totalMaintenanceCost: 0,
-        remainingInvestment: values.totalInvestment,
-        totalProfit: 0,
-        netProfit: 0,
-      });
+    const propertyData = {
+      userId: user.uid,
+      name: values.name,
+      code: `FP-${Date.now().toString().slice(-6)}`,
+      categoryId: values.categoryId,
+      location: values.location,
+      size: values.size,
+      description: '',
+      type: 'Finished',
+      imageId: 'default-img',
+      totalInvestment: values.totalInvestment,
+      units: isMultiUnit ? values.units : 1,
+      unitsList: finalUnitsList.map((u, i) => ({ ...u, id: `unit-${i + 1}-${Date.now()}` })),
+      createdAt: new Date().toISOString(),
+      isDeleted: false,
+      members: { [user.uid]: 'admin' },
+      status: !isMultiUnit ? values.status : 'Occupied',
+      monthlyRent: !isMultiUnit ? values.monthlyRent : 0,
+      paymentDueDay: !isMultiUnit ? values.paymentDueDay : 1,
+      tenantName: !isMultiUnit ? values.tenantName : '',
+      tenantContact: !isMultiUnit ? values.tenantContact : '',
+      totalConstructionCost: 0,
+      totalRentReceived: 0,
+      totalMaintenanceCost: 0,
+      remainingInvestment: values.totalInvestment,
+      totalProfit: 0,
+      netProfit: 0,
+    };
 
-      toast({
-        title: 'Property Added',
-        description: 'The property has been successfully added.',
+    addDoc(collection(db, 'finished_properties'), propertyData)
+      .then(() => {
+        toast({ title: 'Property Added', description: 'The property has been successfully added.' });
+        form.reset();
+        setOpen(false);
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'finished_properties',
+          operation: 'create',
+          requestResourceData: propertyData,
+        }));
       });
-      form.reset();
-      setOpen(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not add the property.',
-      });
-    }
   };
 
   return (
@@ -227,7 +203,7 @@ export function AddFinishedPropertyForm() {
             Add Finished Property
           </DialogTitle>
           <DialogDescription>
-            Configure your property details. Multi-unit types allow tracking individual tenants.
+            Configure your property details. Ownership will be assigned to your account.
           </DialogDescription>
         </DialogHeader>
 
@@ -341,31 +317,17 @@ export function AddFinishedPropertyForm() {
                       <Home className="h-5 w-5 text-primary" />
                       <h3 className="text-lg font-headline font-semibold">Unit Details</h3>
                     </div>
-                    <Alert className="bg-primary/5 border-primary/20">
-                      <Info className="h-4 w-4 text-primary" />
-                      <AlertTitle className="text-primary font-bold">Managing {fields.length} Units</AlertTitle>
-                      <AlertDescription>
-                        Set unique tenant information for each unit.
-                      </AlertDescription>
-                    </Alert>
-
                     <div className="grid gap-6">
                       {fields.map((field, index) => (
                         <div key={field.id} className="p-4 border rounded-xl bg-card space-y-4 shadow-sm">
                           <div className="flex items-center justify-between border-b pb-2">
                             <h4 className="font-bold text-sm text-primary uppercase">Unit {index + 1}</h4>
                             {fields.length > 1 && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-destructive"
-                                onClick={() => remove(index)}
-                              >
+                              <Button variant="ghost" size="sm" className="h-8 text-destructive" onClick={() => remove(index)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
-
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <FormField
                               control={form.control}
@@ -407,41 +369,6 @@ export function AddFinishedPropertyForm() {
                               )}
                             />
                           </div>
-
-                          {form.watch(`unitsList.${index}.status`) === 'Occupied' && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-                              <FormField
-                                control={form.control}
-                                name={`unitsList.${index}.tenantName`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Tenant Name</FormLabel>
-                                    <FormControl><Input className="h-8 bg-background" {...field} /></FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name={`unitsList.${index}.tenantContact`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Contact</FormLabel>
-                                    <FormControl><Input className="h-8 bg-background" {...field} /></FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name={`unitsList.${index}.paymentDueDay`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Due Day (1-31)</FormLabel>
-                                    <FormControl><Input className="h-8 bg-background" type="number" {...field} /></FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -495,37 +422,10 @@ export function AddFinishedPropertyForm() {
                         )}
                       />
                     </div>
-                    {form.watch('status') === 'Occupied' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-muted/50 rounded-xl border">
-                        <FormField
-                          control={form.control}
-                          name="tenantName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Tenant Name</FormLabel>
-                              <FormControl><Input className="bg-background" {...field} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="tenantContact"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Contact Info</FormLabel>
-                              <FormControl><Input className="bg-background" {...field} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
             </ScrollArea>
-
             <DialogFooter className="p-6 border-t bg-card shrink-0">
               <Button type="submit" className="w-full md:w-auto font-bold px-8" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Saving...' : 'Save Property'}

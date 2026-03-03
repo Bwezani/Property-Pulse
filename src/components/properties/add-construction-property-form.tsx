@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -50,8 +49,7 @@ const formSchema = z.object({
     .coerce
     .number()
     .min(0, 'Budget cannot be negative.')
-    .optional()
-    .or(z.literal(NaN)),
+    .default(0),
 });
 
 type ConstructionPropertyFormValues = z.infer<typeof formSchema>;
@@ -76,6 +74,7 @@ export function AddConstructionPropertyForm() {
     if (!db || !user) return;
 
     const propertyData = {
+      userId: user.uid,
       name: values.name,
       code: `CP-${Date.now().toString().slice(-6)}`,
       categoryId: 'under-construction',
@@ -105,20 +104,16 @@ export function AddConstructionPropertyForm() {
 
     addDoc(collection(db, 'construction_properties'), propertyData)
       .then(() => {
-        toast({
-          title: 'Property Added',
-          description: 'The construction property has been successfully added.',
-        });
+        toast({ title: 'Property Added', description: 'The construction property has been successfully added.' });
         form.reset();
         setOpen(false);
       })
-      .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: 'construction_properties',
           operation: 'create',
           requestResourceData: propertyData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        }));
       });
   };
 
@@ -134,7 +129,7 @@ export function AddConstructionPropertyForm() {
         <DialogHeader>
           <DialogTitle>Add Construction Property</DialogTitle>
           <DialogDescription>
-            Enter the details for the new project in the construction pipeline.
+            Enter the details for the new project. Ownership will be assigned to your account.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -184,14 +179,9 @@ export function AddConstructionPropertyForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Construction Stage</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select stage" />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Planning">Planning</SelectItem>
@@ -199,7 +189,6 @@ export function AddConstructionPropertyForm() {
                       <SelectItem value="Framing">Framing</SelectItem>
                       <SelectItem value="Roofing">Roofing</SelectItem>
                       <SelectItem value="Finishing">Finishing</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -212,22 +201,13 @@ export function AddConstructionPropertyForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Estimated Budget (ZMW)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 1200000"
-                      {...field}
-                    />
-                  </FormControl>
+                  <FormControl><Input type="number" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button
-                type="submit"
-                disabled={form.formState.isSubmitting}
-              >
+              <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Adding...' : 'Add Property'}
               </Button>
             </DialogFooter>

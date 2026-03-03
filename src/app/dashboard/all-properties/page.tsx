@@ -1,11 +1,11 @@
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { calculatePropertyFinancials } from '@/lib/financials';
 import { columns } from '@/components/properties/columns';
 import { DataTable } from '@/components/properties/data-table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { Loader2, Landmark, TrendingUp, LayoutGrid, BadgePercent } from 'lucide-react';
 import type { Property, ConstructionExpense, RentalIncome, MaintenanceExpense } from '@/lib/types';
@@ -17,36 +17,36 @@ export default function AllPropertiesPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Fetch Finished Properties
+  // Fetch Finished Properties for current user
   const finishedPropsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'finished_properties'));
+    return query(collection(db, 'finished_properties'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: finishedProps, isLoading: isFinishedLoading } = useCollection<Property>(finishedPropsQuery);
 
-  // Fetch Construction Properties
+  // Fetch Construction Properties for current user
   const constructionPropsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'construction_properties'));
+    return query(collection(db, 'construction_properties'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: constructionProps, isLoading: isConstructionLoading } = useCollection<Property>(constructionPropsQuery);
 
-  // Fetch all related data for financials calculation
+  // Fetch related data for financials calculation filtered by user
   const expensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'construction_expenses'));
+    return query(collection(db, 'construction_expenses'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: allExpenses, isLoading: isExpensesLoading } = useCollection<ConstructionExpense>(expensesQuery);
 
   const incomesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'rental_incomes'));
+    return query(collection(db, 'rental_incomes'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: allIncomes, isLoading: isIncomesLoading } = useCollection<RentalIncome>(incomesQuery);
 
   const maintenanceQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'maintenance_expenses'));
+    return query(collection(db, 'maintenance_expenses'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: allMaintenance, isLoading: isMaintenanceLoading } = useCollection<MaintenanceExpense>(maintenanceQuery);
 
@@ -88,7 +88,7 @@ export default function AllPropertiesPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold text-foreground">Portfolio Overview</h1>
-            <p className="text-muted-foreground text-sm">Aggregated financial performance and asset tracking across all stages.</p>
+            <p className="text-muted-foreground text-sm">Managing assets for {user?.email}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <AddFinishedPropertyWrapper />

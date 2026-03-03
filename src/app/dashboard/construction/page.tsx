@@ -1,7 +1,7 @@
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PropertyListItem } from '@/components/properties/property-list-item';
 import { Construction, Banknote, GanttChartSquare, Landmark, Loader2, TrendingDown } from 'lucide-react';
@@ -15,17 +15,17 @@ export default function ConstructionDashboardPage() {
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Fetch all construction properties
+  // Fetch all construction properties for current user
   const constructionPropsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'construction_properties'));
+    return query(collection(db, 'construction_properties'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: rawProperties, isLoading: isPropsLoading } = useCollection<Property>(constructionPropsQuery);
 
-  // Fetch all construction expenses for calculation
+  // Fetch all construction expenses for calculation filtered by user
   const allExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'construction_expenses'));
+    return query(collection(db, 'construction_expenses'), where('userId', '==', user.uid));
   }, [db, user]);
   const { data: allExpenses, isLoading: isExpensesLoading } = useCollection<ConstructionExpense>(allExpensesQuery);
 
@@ -88,7 +88,7 @@ export default function ConstructionDashboardPage() {
           <h1 className="text-3xl font-headline font-bold">
             Construction Dashboard
           </h1>
-          <p className="text-muted-foreground text-sm">Real-time oversight of active development projects and cumulative spending.</p>
+          <p className="text-muted-foreground text-sm">Development oversight for {user?.email}</p>
         </div>
   
         <div className="flex flex-wrap gap-2">
@@ -168,9 +168,6 @@ export default function ConstructionDashboardPage() {
                     />
                   </div>
                </div>
-               <p className="text-[10px] text-muted-foreground italic">
-                 Note: Ensure all material deliveries are logged promptly to maintain accurate budget tracking.
-               </p>
             </div>
           </div>
         </div>
@@ -196,7 +193,6 @@ export default function ConstructionDashboardPage() {
           </div>
         )}
       </div>
-  
     </div>
   );
 }
