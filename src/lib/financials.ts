@@ -31,27 +31,21 @@ export function calculatePropertyFinancials(
   
   // Determine total investment based on property type
   const totalInvestment = property.type === 'Finished' 
-    ? property.totalInvestment 
+    ? (property.totalInvestment || 0)
     : totalConstructionCost;
 
-  // Calculate recovery and profit
-  let remainingInvestment = 0;
-  let totalProfit = 0;
+  // Investment recovery progress (for UI indicators)
+  const remainingInvestment = Math.max(0, totalInvestment - totalRentReceived);
+  const totalProfit = Math.max(0, totalRentReceived - totalInvestment);
 
-  if (totalRentReceived < totalInvestment) {
-    remainingInvestment = totalInvestment - totalRentReceived;
-    totalProfit = 0;
-  } else {
-    remainingInvestment = 0;
-    totalProfit = totalRentReceived - totalInvestment;
-  }
-
-  const netProfit = totalProfit - totalMaintenanceCost;
+  // Net Profit: Total Revenue - (Total Investment + Total Maintenance)
+  // This will be negative until the property has broken even including maintenance.
+  const netProfit = totalRentReceived - totalInvestment - totalMaintenanceCost;
   
   // Create a fully calculated financial object for the property
   const calculatedProperty: Property = {
     ...property,
-    totalConstructionCost: property.type === 'Under Construction' ? totalConstructionCost : property.totalInvestment,
+    totalConstructionCost: property.type === 'Under Construction' ? totalConstructionCost : (property.totalInvestment || 0),
     totalInvestment,
     totalRentReceived,
     totalMaintenanceCost,
