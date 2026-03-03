@@ -17,3 +17,15 @@ export function formatCurrency(amount: number) {
     maximumFractionDigits: 1,
   }).format(amount);
 }
+
+/**
+ * Formats a number as a full currency string (e.g., ZMW 10,000.00)
+ */
+export function formatFullCurrency(amount: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'ZMW',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}

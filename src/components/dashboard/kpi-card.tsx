@@ -1,14 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { LucideIcon } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface KpiCardProps {
   title: string
   value: string
   helperText: string
   Icon: LucideIcon
+  tooltipValue?: string
 }
 
-export function KpiCard({ title, value, helperText, Icon }: KpiCardProps) {
+export function KpiCard({ title, value, helperText, Icon, tooltipValue }: KpiCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -16,7 +23,20 @@ export function KpiCard({ title, value, helperText, Icon }: KpiCardProps) {
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        {tooltipValue ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="text-2xl font-bold cursor-help">{value}</div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{tooltipValue}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <div className="text-2xl font-bold">{value}</div>
+        )}
         <p className="text-xs text-muted-foreground">{helperText}</p>
       </CardContent>
     </Card>

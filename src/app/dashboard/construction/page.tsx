@@ -10,7 +10,7 @@ import { ImportUnderConstructionProperties } from '@/components/properties/impor
 import { AddConstructionPropertyWrapper } from '@/components/properties/add-construction-property-wrapper';
 import { ConstructionExpenseBarChart } from '../reports/construction-expense-bar-chart';
 import { calculatePropertyFinancials } from '@/lib/financials';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
 
 export default function ConstructionDashboardPage() {
   const db = useFirestore();
@@ -108,12 +108,14 @@ export default function ConstructionDashboardPage() {
         <KpiCard
           title="Total Spent"
           value={formatCurrency(totalConstructionCost)}
+          tooltipValue={formatFullCurrency(totalConstructionCost)}
           helperText="Across all active projects"
           Icon={Banknote}
         />
         <KpiCard
           title="Planned Budget"
           value={formatCurrency(totalPlannedBudget)}
+          tooltipValue={formatFullCurrency(totalPlannedBudget)}
           helperText="Target project allocation"
           Icon={Landmark}
         />

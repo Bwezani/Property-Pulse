@@ -1,5 +1,11 @@
 import { Progress } from '@/components/ui/progress';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface InvestmentProgressProps {
   totalInvestment: number;
@@ -21,29 +27,48 @@ export function InvestmentProgress({ totalInvestment, rentReceived }: Investment
   const profitAmount = rentReceived - totalInvestment;
 
   return (
-    <div className="w-full">
-      <div className="flex justify-between text-xs mb-1">
-        <span className="font-medium text-muted-foreground">
-            {isProfit ? "Profit Mode" : "Investment Recovery"}
-        </span>
-        <span className="font-bold">
-            {isProfit 
-             ? `+${formatCurrency(profitAmount)}`
-             : `${Math.min(100, progress).toFixed(0)}%`
-            }
-        </span>
+    <TooltipProvider>
+      <div className="w-full">
+        <div className="flex justify-between text-xs mb-1">
+          <span className="font-medium text-muted-foreground">
+              {isProfit ? "Profit Mode" : "Investment Recovery"}
+          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="font-bold cursor-help">
+                  {isProfit 
+                   ? `+${formatCurrency(profitAmount)}`
+                   : `${Math.min(100, progress).toFixed(0)}%`
+                  }
+              </span>
+            </TooltipTrigger>
+            {isProfit && (
+              <TooltipContent>
+                <p>Total Profit: {formatFullCurrency(profitAmount)}</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </div>
+        <Progress value={isProfit ? 100 : progress} className="h-2" indicatorClassName={colorClass} />
+        <div className="flex justify-between text-xs mt-1 text-muted-foreground">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">{formatCurrency(rentReceived)}</span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Total Rent: {formatFullCurrency(rentReceived)}</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">{formatCurrency(totalInvestment)}</span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Total Investment: {formatFullCurrency(totalInvestment)}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
-      <Progress value={isProfit ? 100 : progress} className="h-2 [&>div]:" indicatorClassName={colorClass} />
-      <div className="flex justify-between text-xs mt-1 text-muted-foreground">
-        <span>{formatCurrency(rentReceived)}</span>
-        <span>{formatCurrency(totalInvestment)}</span>
-      </div>
-    </div>
+    </TooltipProvider>
   );
-}
-
-declare module 'react' {
-    interface HTMLAttributes<T> extends AriaAttributes, DOMAttributes<T> {
-      indicatorClassName?: string;
-    }
 }

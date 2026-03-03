@@ -12,7 +12,7 @@ import type { Property, ConstructionExpense, RentalIncome, MaintenanceExpense } 
 import { PropertyListItem } from '@/components/properties/property-list-item';
 import { AddFinishedPropertyWrapper } from '@/components/properties/add-finished-property-wrapper';
 import { AddConstructionPropertyWrapper } from '@/components/properties/add-construction-property-wrapper';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
 
 export default function AllPropertiesPage() {
   const db = useFirestore();
@@ -107,6 +107,7 @@ export default function AllPropertiesPage() {
             <KpiCard
               title="Portfolio Net Profit"
               value={formatCurrency(portfolioNetProfit)}
+              tooltipValue={formatFullCurrency(portfolioNetProfit)}
               helperText="Lifetime net earnings"
               Icon={TrendingUp}
             />

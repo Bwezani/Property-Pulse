@@ -9,7 +9,7 @@ import { Home, PiggyBank, BadgePercent, TrendingUp, Loader2 } from 'lucide-react
 import type { Property, ConstructionExpense, RentalIncome, MaintenanceExpense } from '@/lib/types';
 import { ImportFinishedProperties } from '@/components/properties/import-finished-properties';
 import { calculatePropertyFinancials } from '@/lib/financials';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
 
 export default function FinishedPropertiesDashboardPage() {
   const db = useFirestore();
@@ -101,18 +101,21 @@ export default function FinishedPropertiesDashboardPage() {
         <KpiCard
           title="Total Profit Earned"
           value={formatCurrency(totalProfit)}
+          tooltipValue={formatFullCurrency(totalProfit)}
           helperText="Across all properties"
           Icon={PiggyBank}
         />
         <KpiCard
           title="Remaining Investment"
           value={formatCurrency(totalRemainingInvestment)}
+          tooltipValue={formatFullCurrency(totalRemainingInvestment)}
           helperText="To break even on all properties"
           Icon={BadgePercent}
         />
         <KpiCard
           title="Monthly Rental Income"
           value={formatCurrency(monthlyRentalIncome)}
+          tooltipValue={formatFullCurrency(monthlyRentalIncome)}
           helperText="From occupied properties"
           Icon={TrendingUp}
         />

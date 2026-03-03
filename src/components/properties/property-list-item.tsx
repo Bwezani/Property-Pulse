@@ -7,7 +7,13 @@ import type { Property } from '@/lib/types';
 import { InvestmentProgress } from './investment-progress';
 import { LayoutGrid, Ruler, MapPin, Building2, AlertTriangle, Hash } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface PropertyListItemProps {
   property: Property;
@@ -69,36 +75,52 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
         {property.type === "Finished" ? (
              <InvestmentProgress totalInvestment={property.totalInvestment} rentReceived={property.totalRentReceived} />
         ) : (
-            <div className='space-y-3'>
-                <div className="flex justify-between items-center text-xs">
-                   <div className="flex items-center gap-1">
-                      <span className="text-muted-foreground font-medium">Budget Used</span>
-                      {isOverBudget && <AlertTriangle className="h-3 w-3 text-destructive animate-pulse" />}
-                   </div>
-                   <span className={`font-bold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                      {budgetProgress.toFixed(0)}%
-                   </span>
-                </div>
-                <Progress 
-                  value={Math.min(100, budgetProgress)} 
-                  indicatorClassName={isOverBudget ? 'bg-destructive' : budgetProgress > 90 ? 'bg-amber-500' : 'bg-primary'} 
-                  className="h-1.5" 
-                />
-                <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
-                    <div>
-                        <p className="text-muted-foreground uppercase tracking-wider font-semibold">Total Spent</p>
-                        <p className={`font-bold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                          {formatCurrency(spent)}
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-muted-foreground uppercase tracking-wider font-semibold">Budgeted</p>
-                        <p className="font-bold text-foreground">
-                          {formatCurrency(budget)}
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <TooltipProvider>
+              <div className='space-y-3'>
+                  <div className="flex justify-between items-center text-xs">
+                     <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground font-medium">Budget Used</span>
+                        {isOverBudget && <AlertTriangle className="h-3 w-3 text-destructive animate-pulse" />}
+                     </div>
+                     <span className={`font-bold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
+                        {budgetProgress.toFixed(0)}%
+                     </span>
+                  </div>
+                  <Progress 
+                    value={Math.min(100, budgetProgress)} 
+                    indicatorClassName={isOverBudget ? 'bg-destructive' : budgetProgress > 90 ? 'bg-amber-500' : 'bg-primary'} 
+                    className="h-1.5" 
+                  />
+                  <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
+                      <div>
+                          <p className="text-muted-foreground uppercase tracking-wider font-semibold">Total Spent</p>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className={`font-bold cursor-help ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
+                                {formatCurrency(spent)}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{formatFullCurrency(spent)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                      </div>
+                      <div className="text-right">
+                          <p className="text-muted-foreground uppercase tracking-wider font-semibold">Budgeted</p>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="font-bold text-foreground cursor-help">
+                                {formatCurrency(budget)}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{formatFullCurrency(budget)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                      </div>
+                  </div>
+              </div>
+            </TooltipProvider>
         )}
       </CardContent>
     </Card>
