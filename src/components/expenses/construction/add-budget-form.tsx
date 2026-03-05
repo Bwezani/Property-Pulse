@@ -31,6 +31,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+
 const formSchema = z.object({
   itemName: z.string().min(1, 'Item name is required.'),
   category: z.string().min(1, 'Category is required.'),

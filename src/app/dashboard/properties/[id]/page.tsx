@@ -63,7 +63,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-
+import { ConstructionExpenseBarChart } from '@/app/dashboard/reports/construction-expense-bar-chart';
 export default function PropertyDetailPage() {
   const { id } = useParams() as { id: string };
   const db = useFirestore();
@@ -109,17 +109,32 @@ export default function PropertyDetailPage() {
       where('userId', '==', user.uid)
     );
   }, [db, id, user]);
-  const { data: maintenanceExpenses } = useCollection<MaintenanceExpense>(qMaintenance);
+    const { data: maintenanceExpenses } = useCollection<MaintenanceExpense>(qMaintenance);
 
-  const qBudget = useMemoFirebase(() => {
-    if (!db || !id || !user) return null;
-    return query(
-      collection(db, 'users', user.uid, 'construction_budget_items'), 
-      where('propertyId', '==', id),
-      where('userId', '==', user.uid)
+    const qBudget = useMemoFirebase(() => {
+        if (!db || !id || !user) return null;
+        return query(
+            collection(db, 'users', user.uid, 'construction_budget_items'),
+            where('propertyId', '==', id),
+            where('userId', '==', user.uid)
+        );
+    }, [db, id, user]);
+
+    const { data: budgetItems } = useCollection<ConstructionBudgetItem>(qBudget);
+
+    /* =========================
+       Budget Totals
+    ========================= */
+
+    const totalEstimated = (budgetItems || []).reduce(
+        (sum, item) => sum + Number(item.estimatedCost || 0),
+        0
     );
-  }, [db, id, user]);
-  const { data: budgetItems } = useCollection<ConstructionBudgetItem>(qBudget);
+
+    const totalActual = (budgetItems || []).reduce(
+        (sum, item) => sum + Number(item.actualCost || 0),
+        0
+    );
 
   if (isAuthLoading || isFinishedLoading || isConstructionLoading) {
     return (
@@ -129,6 +144,9 @@ export default function PropertyDetailPage() {
     );
   }
 
+    const difference = totalActual - totalEstimated;
+    const isOverBudget = difference > 0;
+    const isUnderBudget = difference < 0;
   const rawProperty = finishedProp || constructionProp;
 
   if (!rawProperty) {
@@ -178,8 +196,33 @@ export default function PropertyDetailPage() {
   const recoveryProgress = Math.floor(recoveryProgressRaw * 10) / 10;
   
   const budgetUtilizationRaw = calculatedProperty.estimatedBudget ? (calculatedProperty.totalConstructionCost / calculatedProperty.estimatedBudget) * 100 : 0;
-  const budgetUtilization = Math.floor(budgetUtilizationRaw * 10) / 10;
+    const budgetUtilization = Math.floor(budgetUtilizationRaw * 10) / 10;
 
+  
+    // Aggregate expenses per category for THIS property only
+    const budgetCategories = (budgetItems || []).reduce(
+        (acc, item) => {
+
+            const category = item.category?.trim() || "Other";
+
+            // Ensure actualCost is treated as a number
+            const amount = Number(item.actualCost || 0);
+
+            if (!acc[category]) {
+                acc[category] = 0;
+            }
+
+            acc[category] += amount;
+
+            return acc;
+
+        },
+        {} as Record<string, number>
+    );
+    const chartData = Object.entries(budgetCategories).map(([category, amount]) => ({
+        category,
+        amount,
+    }));
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       <header className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
@@ -417,20 +460,27 @@ export default function PropertyDetailPage() {
           {calculatedProperty.type === 'Finished' && <TabsTrigger value="maintenance">Maintenance</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="construction" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Construction Expenditure</CardTitle>
-                <CardDescription>Detailed log of all material, labour, and transport costs.</CardDescription>
-              </div>
-              <AddConstructionExpenseForm propertyId={calculatedProperty.id} />
-            </CardHeader>
-            <CardContent>
-              <TransactionsDataTable columns={constructionColumns} data={constructionExpenses || []} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <TabsContent value="construction" className="mt-6 space-y-6">
+                  <Card>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                          <div>
+                              <CardTitle>Construction Expenditure</CardTitle>
+                              <CardDescription>
+                                  Detailed log of all material, labour, and transport costs.
+                              </CardDescription>
+                          </div>
+                          <AddConstructionExpenseForm propertyId={calculatedProperty.id} />
+                      </CardHeader>
+                      <CardContent>
+                          <TransactionsDataTable
+                              columns={constructionColumns}
+                              data={constructionExpenses || []}
+                          />
+                      </CardContent>
+                  </Card>
+
+                 
+              </TabsContent>
 
         <TabsContent value="budget" className="mt-6 space-y-4">
           <Card>
@@ -442,7 +492,59 @@ export default function PropertyDetailPage() {
               <AddConstructionBudgetItemForm propertyId={calculatedProperty.id} />
             </CardHeader>
             <CardContent>
-              <TransactionsDataTable columns={constructionBudgetColumns} data={budgetItems || []} />
+                          <TransactionsDataTable columns={constructionBudgetColumns} data={budgetItems || []} />
+                          <div className="mt-6 border-t pt-4 flex flex-col gap-2 text-sm font-medium">
+
+                              <div className="flex justify-between">
+                                  <span>Total Estimated Cost</span>
+                                  <span>{formatFullCurrency(totalEstimated)}</span>
+                              </div>
+
+                              <div className="flex justify-between">
+                                  <span>Total Actual Cost</span>
+                                  <span>{formatFullCurrency(totalActual)}</span>
+                              </div>
+
+                              <div className="flex justify-between font-semibold">
+                                  <span>
+                                      {isOverBudget
+                                          ? "Over Budget"
+                                          : isUnderBudget
+                                              ? "Under Budget"
+                                              : "On Budget"}
+                                  </span>
+
+                                  <span
+                                      className={
+                                          isOverBudget
+                                              ? "text-red-600"
+                                              : isUnderBudget
+                                                  ? "text-green-600"
+                                                  : ""
+                                      }
+                                  >
+                                      {formatFullCurrency(Math.abs(difference))}
+                                  </span>
+                              </div>
+
+                          </div>
+                          <Card className="mt-6">
+                              <CardHeader>
+                                  <CardTitle>Budget Distribution</CardTitle>
+                                  <CardDescription>
+                                      Category vs actual spending for this project.
+                                  </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                  <ConstructionExpenseBarChart
+                                      data={
+                                          chartData.length > 0
+                                              ? chartData
+                                              : [{ category: "No Data", amount: 0 }]
+                                      }
+                                  />
+                              </CardContent>
+                          </Card>
             </CardContent>
           </Card>
         </TabsContent>
@@ -459,20 +561,40 @@ export default function PropertyDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="maintenance" className="mt-6 space-y-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Maintenance Log</CardTitle>
-                <CardDescription>Track repairs and ongoing utility costs for finished units.</CardDescription>
-              </div>
-              <AddMaintenanceExpenseForm property={calculatedProperty} />
-            </CardHeader>
-            <CardContent>
-              <TransactionsDataTable columns={maintenanceColumns} data={maintenanceExpenses || []} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <TabsContent value="maintenance" className="mt-6 space-y-6">
+                  <Card>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                          <div>
+                              <CardTitle>Maintenance Log</CardTitle>
+                              <CardDescription>
+                                  Track repairs and ongoing utility costs for finished units.
+                              </CardDescription>
+                          </div>
+                          <AddMaintenanceExpenseForm property={calculatedProperty} />
+                      </CardHeader>
+                      <CardContent>
+                          <TransactionsDataTable
+                              columns={maintenanceColumns}
+                              data={maintenanceExpenses || []}
+                          />
+                      </CardContent>
+                  </Card>
+
+                  {/* ✅ Chart Below Maintenance Table */}
+                  {chartData.length > 0 && (
+                      <Card>
+                          <CardHeader>
+                              <CardTitle>Maintenance Expense Breakdown</CardTitle>
+                              <CardDescription>
+                                  Visual distribution of maintenance spending categories.
+                              </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                              <ConstructionExpenseBarChart data={chartData} />
+                          </CardContent>
+                      </Card>
+                  )}
+              </TabsContent>
       </Tabs>
     </div>
   );
