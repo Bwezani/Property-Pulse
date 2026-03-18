@@ -4,10 +4,10 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { MaintenanceBudgetItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { UpdateMaintenanceBudgetActualForm } from './update-actual-form';
 import { useFirebase } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { formatCurrency } from '@/lib/utils';
+import { MaintenanceBudgetActions } from './maintenance-budget-actions';
 
 export const maintenanceBudgetColumns: ColumnDef<MaintenanceBudgetItem>[] = [
   {
@@ -31,14 +31,14 @@ export const maintenanceBudgetColumns: ColumnDef<MaintenanceBudgetItem>[] = [
       );
     },
   },
-  {
-    accessorKey: 'estimatedCost',
-    header: 'Estimated Cost',
-    cell: ({ row }) => {
-      const amount = parseFloat(row.getValue('estimatedCost'));
-      return <div className="font-medium">{formatCurrency(amount)}</div>;
+    {
+        accessorKey: 'estimatedCost',
+        header: 'Estimated Cost',
+        cell: ({ row }) => {
+            const amount = parseFloat(row.getValue('estimatedCost'));
+            return <div className="font-medium">{formatCurrency(amount)}</div>;
+        },
     },
-  },
   {
     accessorKey: 'actualCost',
     header: 'Actual Cost',
@@ -54,37 +54,12 @@ export const maintenanceBudgetColumns: ColumnDef<MaintenanceBudgetItem>[] = [
   {
     id: 'actions',
     header: '',
-    cell: ({ row }) => {
-      const item = row.original;
-      const { firestore: db, user } = useFirebase();
+      cell: ({ row }) => {
+          const item = row.original;
 
-      const handleDelete = async () => {
-        if (!db || !user) return;
-        try {
-          const docRef = doc(db, 'users', user.uid, 'maintenance_budget_items', item.id);
-          await deleteDoc(docRef);
-          toast({ title: 'Item Deleted', description: 'Budget item removed.' });
-        } catch (error) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete item.' });
-        }
-      };
-
-      return (
-        <div className="flex justify-end gap-2">
-          <UpdateMaintenanceBudgetActualForm
-            propertyId={item.propertyId}
-            item={item}
-          />
-          <Button
-            variant="ghost"
-            size="xs"
-            className="text-destructive"
-            onClick={handleDelete}
-          >
-            Delete
-          </Button>
-        </div>
-      );
-    },
+          return (
+              <MaintenanceBudgetActions item={item} />
+          );
+      },
   },
 ];

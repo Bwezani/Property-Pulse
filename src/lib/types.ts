@@ -102,10 +102,11 @@ export type ConstructionBudgetItem = {
 };
 
 export type MaintenanceBudgetItem = {
-  id: string;
-  propertyId: string;
-  itemName: string;
-  category: string;
-  estimatedCost: number;
-  actualCost: number;
+    id: string;
+    itemName: string;
+    category: string;
+    estimatedCost: number;
+    actualCost?: number;
+    propertyId: string;
+    userId: string;
 };
