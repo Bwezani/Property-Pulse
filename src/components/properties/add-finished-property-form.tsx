@@ -46,10 +46,11 @@ const CATEGORIES = [
   { id: 'bedsit', name: 'Bedsit' },
   { id: 'commercial', name: 'Commercial Space' },
   { id: 'warehouse', name: 'Warehouse' },
+  { id: 'airbnb', name: 'Airbnb / Short Term' },
   { id: 'other', name: 'Other' },
 ];
 
-const MULTI_UNIT_CATEGORIES = ['apartment', 'flat', 'commercial', 'warehouse'];
+const MULTI_UNIT_CATEGORIES = ['apartment', 'flat', 'commercial', 'warehouse', 'airbnb'];
 
 const unitSchema = z.object({
   unitName: z.string().min(1, 'Unit name/number is required.'),
@@ -117,6 +118,7 @@ export function AddFinishedPropertyForm() {
   const categoryId = form.watch('categoryId');
   const unitsCountRaw = form.watch('units');
   const isMultiUnit = MULTI_UNIT_CATEGORIES.includes(categoryId);
+  const isAirbnb = categoryId === 'airbnb';
 
   useEffect(() => {
     if (!isMultiUnit) return;
@@ -145,16 +147,21 @@ export function AddFinishedPropertyForm() {
     const finalUnitsList = isMultiUnit
       ? values.unitsList.map(u => ({
           ...u,
+          status: isAirbnb ? 'Vacant' : u.status,
+          monthlyRent: isAirbnb ? 0 : u.monthlyRent,
+          paymentDueDay: isAirbnb ? 1 : u.paymentDueDay,
           tenantName: u.tenantName ?? '',
           tenantContact: u.tenantContact ?? '',
+          isAirbnb: isAirbnb,
         }))
       : [{ 
           unitName: 'Main Unit', 
-          status: values.status || 'Vacant', 
-          monthlyRent: values.monthlyRent || 0, 
-          paymentDueDay: values.paymentDueDay || 1, 
+          status: isAirbnb ? 'Vacant' : (values.status || 'Vacant'), 
+          monthlyRent: isAirbnb ? 0 : (values.monthlyRent || 0), 
+          paymentDueDay: isAirbnb ? 1 : (values.paymentDueDay || 1), 
           tenantName: values.tenantName ?? '', 
-          tenantContact: values.tenantContact ?? '' 
+          tenantContact: values.tenantContact ?? '',
+          isAirbnb: isAirbnb,
         }];
 
     const propertyData = {
@@ -162,6 +169,7 @@ export function AddFinishedPropertyForm() {
       name: values.name,
       code: `FP-${Date.now().toString().slice(-6)}`,
       categoryId: values.categoryId,
+      isAirbnb: isAirbnb,
       location: values.location,
       size: values.size,
       description: '',
@@ -348,41 +356,45 @@ export function AddFinishedPropertyForm() {
                               control={form.control}
                               name={`unitsList.${index}.unitName`}
                               render={({ field }) => (
-                                <FormItem>
+                                <FormItem className={isAirbnb ? "md:col-span-3" : ""}>
                                   <FormLabel className="text-xs">Name/No.</FormLabel>
-                                  <FormControl><Input className="h-8" {...field} /></FormControl>
+                                  <FormControl><Input className="h-8" placeholder={isAirbnb ? "e.g. Room 1 or Entire House" : ""} {...field} /></FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
                             />
-                            <FormField
-                              control={form.control}
-                              name={`unitsList.${index}.status`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs">Status</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="Occupied">Occupied</SelectItem>
-                                      <SelectItem value="Vacant">Vacant</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={`unitsList.${index}.monthlyRent`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs">Monthly Rent</FormLabel>
-                                  <FormControl><Input className="h-8" type="number" {...field} /></FormControl>
-                                </FormItem>
-                              )}
-                            />
+                            {!isAirbnb && (
+                              <>
+                                <FormField
+                                  control={form.control}
+                                  name={`unitsList.${index}.status`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs">Status</FormLabel>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="Occupied">Occupied</SelectItem>
+                                          <SelectItem value="Vacant">Vacant</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name={`unitsList.${index}.monthlyRent`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs">Monthly Rent</FormLabel>
+                                      <FormControl><Input className="h-8" type="number" {...field} /></FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}

@@ -13,6 +13,7 @@ import { PropertyListItem } from '@/components/properties/property-list-item';
 import { AddFinishedPropertyWrapper } from '@/components/properties/add-finished-property-wrapper';
 import { AddConstructionPropertyWrapper } from '@/components/properties/add-construction-property-wrapper';
 import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import { RentNotifications } from '@/components/dashboard/rent-notifications';
 
 export default function AllPropertiesPage() {
   const db = useFirestore();
@@ -127,6 +128,8 @@ export default function AllPropertiesPage() {
               Icon={BadgePercent}
             />
         </div>
+        
+        <RentNotifications properties={calculatedProperties} incomes={allIncomes || []} />
 
         <div className="space-y-4">
             <div className="flex items-center justify-between">

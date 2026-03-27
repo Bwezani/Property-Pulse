@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 import { Menu, Search, LogOut, User } from 'lucide-react';
 import { DashboardNav } from './nav';
+import { NotificationsDropdown } from './notifications-dropdown';
 import { Logo } from '../logo';
 import { Input } from '../ui/input';
 import { useAuth, useUser } from '@/firebase';
@@ -56,6 +57,7 @@ export function DashboardHeader() {
           className="w-full rounded-lg bg-card pl-8 md:w-[200px] lg:w-[320px]"
         />
       </div>
+      <NotificationsDropdown />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 border border-border/50">

@@ -5,7 +5,7 @@ export function Logo() {
   return (
     <Link href="/dashboard" className="flex items-center gap-2">
       <Building2 className="h-6 w-6 text-primary" />
-      <h1 className="text-xl font-bold font-headline text-primary">Property Pulse</h1>
+      <h1 className="text-xl font-bold font-headline text-primary">IGM Trust Properties</h1>
     </Link>
   );
 }

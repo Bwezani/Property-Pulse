@@ -1,75 +1,200 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, FileSpreadsheet, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import * as XLSX from 'xlsx';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, doc, setDoc, getDocs } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
 
 export function ImportFinishedProperties() {
+  const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const db = useFirestore();
+  const { user } = useUser();
+
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['Property Name', 'Location', 'Status', 'Monthly Rent', 'Payment Due Day', 'Tenant Name', 'Contact Number', 'Is Airbnb?'],
+      ['Sunset Apartments', '123 Main St', 'Occupied', 5000, 1, 'John Doe', '+123456789', 'No'],
+      ['Cozy Lodge', '456 Elm St', 'Vacant', 0, 5, '', '', 'Yes'],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.writeFile(wb, 'Finished_Properties_Template.xlsx');
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
+    if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
     }
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || !db || !user) return;
+    setIsUploading(true);
+    
+    try {
+      // First, fetch existing properties to check duplicates
+      const existingSnapshot = await getDocs(collection(db, 'users', user.uid, 'finished_properties'));
+      const existingNames = new Set(existingSnapshot.docs.map(d => d.data().name.toLowerCase().trim()));
 
-    // Backend endpoint your friend will implement
-    const formData = new FormData();
-    formData.append('file', file);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json<any>(worksheet);
 
-    await fetch('/api/import-finished-properties', {
-      method: 'POST',
-      body: formData,
-    });
+          let imported = 0;
+          let skipped: string[] = [];
 
-    alert('File uploaded successfully');
+          for (const row of json) {
+            const name = row['Property Name'];
+            if (!name) continue; // Skip empty rows
+
+            const cleanName = String(name).trim();
+
+            if (existingNames.has(cleanName.toLowerCase())) {
+              skipped.push(cleanName);
+              continue;
+            }
+
+            // Build property
+            const propertyData = {
+              name: cleanName,
+              location: row['Location'] || 'Unknown',
+              status: row['Status'] === 'Occupied' ? 'Occupied' : 'Vacant',
+              monthlyRent: Number(row['Monthly Rent']) || 0,
+              paymentDueDay: Number(row['Payment Due Day']) || 1,
+              tenantName: row['Tenant Name'] || '',
+              tenantContact: row['Contact Number'] || '',
+              isAirbnb: String(row['Is Airbnb?']).toLowerCase() === 'yes',
+              type: 'Finished',
+              createdAt: new Date().toISOString(),
+              isDeleted: false,
+              totalConstructionCost: 0,
+              totalRentReceived: 0,
+              totalMaintenanceCost: 0,
+              remainingInvestment: 0,
+              totalProfit: 0,
+              netProfit: 0,
+              totalInvestment: 0,
+              categoryId: 'default',
+              code: `PROP-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+            };
+
+            const docRef = doc(collection(db, 'users', user.uid, 'finished_properties'));
+            await setDoc(docRef, { ...propertyData, id: docRef.id });
+            imported++;
+          }
+
+          if (skipped.length > 0) {
+            toast({ 
+              title: `Imported ${imported}. Skipped ${skipped.length}`, 
+              description: `Skipped duplicates: ${skipped.join(', ')}`,
+              duration: 10000 
+            });
+          } else {
+            toast({ title: 'Import Successful', description: `Successfully imported ${imported} properties.` });
+          }
+          
+          setOpen(false);
+          setFile(null);
+        } catch (err) {
+          console.error(err);
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to process Excel file.' });
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Network Error', description: 'Failed to check database.' });
+      setIsUploading(false);
+    }
   };
 
   return (
-    <div>
-      <input
-        type="file"
-        accept=".xlsx,.xls"
-        onChange={handleFileChange}
-        className="hidden"
-        id="finishedImport"
-      />
-
-      <label htmlFor="finishedImport">
-        <Button variant="outline" asChild>
-          <span>
-            <Upload className="mr-2 h-4 w-4" />
-            Import Excel
-          </span>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="shadow-sm">
+          <Upload className="mr-2 h-4 w-4" />
+          Import Excel
         </Button>
-      </label>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5 text-green-600" />
+            Import Finished Properties
+          </DialogTitle>
+          <DialogDescription>
+            Download our template, fill it with your properties, and upload it back here.<br/>
+            <strong>Note:</strong> Any properties matching an existing name will be skipped.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="flex flex-col gap-6 py-4">
+          <div className="bg-slate-50 dark:bg-slate-900 border border-border p-4 rounded-xl flex items-center justify-between">
+            <div className="text-sm">
+              <p className="font-semibold text-foreground">Step 1: Get the format</p>
+              <p className="text-muted-foreground">Download the required Excel template.</p>
+            </div>
+            <Button variant="secondary" size="sm" onClick={handleDownloadTemplate}>
+              <Download className="mr-2 h-4 w-4" />
+              Template
+            </Button>
+          </div>
 
-      {file && (
-  <>
-    <Button
-      size="sm"
-      className="ml-2"
-      onClick={handleUpload}
-    >
-      Upload
-    </Button>
+          <div className="bg-slate-50 dark:bg-slate-900 border border-border p-4 rounded-xl flex flex-col gap-3">
+            <div className="text-sm">
+              <p className="font-semibold text-foreground">Step 2: Upload your data</p>
+              <p className="text-muted-foreground">Upload the completed `.xlsx` file here.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileChange}
+                className="hidden"
+                id="finishedImportModal"
+              />
+              <label htmlFor="finishedImportModal" className="w-full">
+                <div className="border-2 border-dashed border-border hover:border-primary transition-colors cursor-pointer rounded-lg p-6 flex flex-col items-center justify-center text-center">
+                  <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                  {file ? (
+                    <span className="text-sm font-medium text-primary">{file.name}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Click to browse or drag and drop</span>
+                  )}
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
 
-    <div className="text-sm text-muted-foreground mt-4">
-      <p className="font-semibold">Supported Excel Format:</p>
-      <ul className="list-disc ml-5">
-        <li>Property Name</li>
-        <li>Location</li>
-        <li>Status (Occupied/Vacant)</li>
-        <li>Monthly Rent</li>
-        <li>Construction Cost</li>
-        <li>Owner Name</li>
-      </ul>
-    </div>
-  </>
-)}
-    </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleUpload} disabled={!file || isUploading}>
+            {isUploading ? 'Importing...' : 'Start Import'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -38,10 +38,11 @@ const CATEGORIES = [
   { id: 'bedsit', name: 'Bedsit' },
   { id: 'commercial', name: 'Commercial Space' },
   { id: 'warehouse', name: 'Warehouse' },
+  { id: 'airbnb', name: 'Airbnb / Short Term' },
   { id: 'other', name: 'Other' },
 ];
 
-const MULTI_UNIT_CATEGORIES = ['apartment', 'flat', 'commercial', 'warehouse'];
+const MULTI_UNIT_CATEGORIES = ['apartment', 'flat', 'commercial', 'warehouse', 'airbnb'];
 
 const unitSchema = z.object({
   unitName: z.string().min(1, 'Unit name/number is required.'),
@@ -109,6 +110,7 @@ export default function AddFinishedPropertyPage() {
   const categoryId = form.watch('categoryId');
   const unitsCountRaw = form.watch('units');
   const isMultiUnit = MULTI_UNIT_CATEGORIES.includes(categoryId);
+  const isAirbnb = categoryId === 'airbnb';
 
   useEffect(() => {
     if (!isMultiUnit) return;
@@ -137,16 +139,21 @@ export default function AddFinishedPropertyPage() {
     const finalUnitsList = isMultiUnit
       ? values.unitsList.map(u => ({
           ...u,
+          status: isAirbnb ? 'Vacant' : u.status,
+          monthlyRent: isAirbnb ? 0 : u.monthlyRent,
+          paymentDueDay: isAirbnb ? 1 : u.paymentDueDay,
           tenantName: u.tenantName ?? '',
           tenantContact: u.tenantContact ?? '',
+          isAirbnb: isAirbnb,
         }))
       : [{ 
           unitName: 'Main Unit', 
-          status: values.status || 'Vacant', 
-          monthlyRent: values.monthlyRent || 0, 
-          paymentDueDay: values.paymentDueDay || 1, 
+          status: isAirbnb ? 'Vacant' : (values.status || 'Vacant'), 
+          monthlyRent: isAirbnb ? 0 : (values.monthlyRent || 0), 
+          paymentDueDay: isAirbnb ? 1 : (values.paymentDueDay || 1), 
           tenantName: values.tenantName ?? '', 
-          tenantContact: values.tenantContact ?? '' 
+          tenantContact: values.tenantContact ?? '',
+          isAirbnb: isAirbnb,
         }];
 
     const propertyData = {
@@ -154,6 +161,7 @@ export default function AddFinishedPropertyPage() {
       name: values.name,
       code: `FP-${Date.now().toString().slice(-6)}`,
       categoryId: values.categoryId,
+      isAirbnb: isAirbnb,
       location: values.location,
       size: values.size,
       description: '',
@@ -165,11 +173,11 @@ export default function AddFinishedPropertyPage() {
       createdAt: new Date().toISOString(),
       isDeleted: false,
       members: { [user.uid]: 'admin' },
-      status: !isMultiUnit ? (values.status || 'Vacant') : 'Occupied',
-      monthlyRent: !isMultiUnit ? (values.monthlyRent || 0) : 0,
-      paymentDueDay: !isMultiUnit ? (values.paymentDueDay || 1) : 1,
-      tenantName: !isMultiUnit ? (values.tenantName ?? '') : '',
-      tenantContact: !isMultiUnit ? (values.tenantContact ?? '') : '',
+      status: isAirbnb ? 'Vacant' : (!isMultiUnit ? (values.status || 'Vacant') : 'Occupied'),
+      monthlyRent: isAirbnb ? 0 : (!isMultiUnit ? (values.monthlyRent || 0) : 0),
+      paymentDueDay: isAirbnb ? 1 : (!isMultiUnit ? (values.paymentDueDay || 1) : 1),
+      tenantName: isAirbnb ? '' : (!isMultiUnit ? (values.tenantName ?? '') : ''),
+      tenantContact: isAirbnb ? '' : (!isMultiUnit ? (values.tenantContact ?? '') : ''),
       totalConstructionCost: 0,
       totalRentReceived: 0,
       totalMaintenanceCost: 0,
@@ -336,43 +344,45 @@ export default function AddFinishedPropertyPage() {
                         control={form.control}
                         name={`unitsList.${index}.unitName`}
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className={isAirbnb ? "md:col-span-2" : ""}>
                             <FormLabel>Name/Number</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
+                            <FormControl><Input placeholder={isAirbnb ? "e.g. Room 1 or Entire House" : ""} {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`unitsList.${index}.status`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Status</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="Occupied">Occupied</SelectItem>
-                                  <SelectItem value="Vacant">Vacant</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`unitsList.${index}.monthlyRent`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Monthly Rent</FormLabel>
-                              <FormControl><Input type="number" {...field} /></FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      {!isAirbnb && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`unitsList.${index}.status`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Status</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="Occupied">Occupied</SelectItem>
+                                    <SelectItem value="Vacant">Vacant</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`unitsList.${index}.monthlyRent`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Monthly Rent</FormLabel>
+                                <FormControl><Input type="number" {...field} /></FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
                       {form.watch(`unitsList.${index}.status`) === 'Occupied' && (
                         <div className="space-y-4 pt-4 border-t border-dashed">
                           <FormField
@@ -407,10 +417,13 @@ export default function AddFinishedPropertyPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <User className="h-5 w-5 text-primary" />
-                  Lease Details
+                  {isAirbnb ? "Airbnb Property Configuration" : "Lease Details"}
                 </CardTitle>
-                <CardDescription>Tenant and rental income configuration for this single-dwelling asset.</CardDescription>
+                <CardDescription>
+                  {isAirbnb ? "This is configured as a single stand-alone Airbnb." : "Tenant and rental income configuration for this single-dwelling asset."}
+                </CardDescription>
               </CardHeader>
+              {!isAirbnb && (
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
@@ -478,6 +491,7 @@ export default function AddFinishedPropertyPage() {
                   </>
                 )}
               </CardContent>
+              )}
             </Card>
           )}
 

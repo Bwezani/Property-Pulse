@@ -6,6 +6,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
 import {
   Table,
@@ -19,19 +22,41 @@ import {
 interface TransactionsDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  onDeleteSelected?: (rows: TData[]) => void;
 }
 
 export function TransactionsDataTable<TData, TValue>({
   columns,
   data,
+  onDeleteSelected,
 }: TransactionsDataTableProps<TData, TValue>) {
+  const [rowSelection, setRowSelection] = useState({});
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    onRowSelectionChange: setRowSelection,
+    state: { rowSelection },
   });
 
   return (
+    <div className="space-y-4">
+      {onDeleteSelected && Object.keys(rowSelection).length > 0 && (
+        <div className="flex items-center">
+            <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => {
+                    onDeleteSelected(table.getFilteredSelectedRowModel().rows.map(r => r.original));
+                    setRowSelection({});
+                }}
+            >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Selected ({Object.keys(rowSelection).length})
+            </Button>
+        </div>
+      )}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -82,5 +107,6 @@ export function TransactionsDataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
+    </div>
   );
 }

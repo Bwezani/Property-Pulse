@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { useDoc } from '@/firebase/firestore/use-doc'
 import { useCollection } from '@/firebase/firestore/use-collection'
 import { useFirestore, useMemoFirebase } from '@/firebase'
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, collection, query, where, deleteDoc } from 'firebase/firestore';
 import { calculatePropertyFinancials } from '@/lib/financials';
 import {
   Card,
@@ -39,6 +39,7 @@ import { InvestmentProgress } from '@/components/properties/investment-progress'
 import { TransactionsDataTable } from '@/components/transactions/data-table';
 import { constructionColumns } from '@/components/expenses/construction/columns'; 
 import { rentalIncomeColumns } from '@/components/income/rental/columns';
+import { airbnbBookingColumns } from '@/components/income/airbnb/columns';
 import { maintenanceColumns } from '@/components/expenses/maintenance/columns';
 import { maintenanceBudgetColumns } from '@/components/expenses/maintenance/budget-columns';
 import { constructionBudgetColumns } from '@/components/expenses/construction/budget-columns';
@@ -48,6 +49,10 @@ import { AddMaintenanceExpenseForm } from '@/components/expenses/maintenance/add
 import { AddMaintenanceBudgetItemForm } from '@/components/expenses/maintenance/add-budget-form';
 import { AddConstructionBudgetItemForm } from '@/components/expenses/construction/add-budget-form';
 import { EditUnitForm } from '@/components/properties/edit-unit-form';
+import { EditPropertyForm } from '@/components/properties/edit-property-form';
+import { DeletePropertyButton } from '@/components/properties/delete-property-action';
+import { AddRentalIncomeForm } from '@/components/income/rental/add-rental-income-form';
+import { AddAirbnbBookingForm } from '@/components/income/airbnb/add-booking-form';
 import type {
     Property,
     ConstructionExpense,
@@ -57,6 +62,7 @@ import type {
     MaintenanceBudgetItem
 } from '@/lib/types';
 import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 import {
   Tooltip,
   TooltipContent,
@@ -275,14 +281,34 @@ export default function PropertyDetailPage() {
             amount,
         })
     );
+
+  const handleBulkDeleteIncomes = async (rows: RentalIncome[]) => {
+      if (!db || !user) return;
+      if (!confirm(`Are you sure you want to delete ${rows.length} rent records?`)) return;
+
+      try {
+          const promises = rows.map(row => 
+            deleteDoc(doc(db, 'users', user.uid, 'rental_incomes', row.id))
+          );
+          await Promise.all(promises);
+          toast({ title: 'Records Deleted', description: `Successfully cleared ${rows.length} records.` });
+      } catch (error) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete some records.' });
+      }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       <header className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-foreground">
-            {calculatedProperty.name}
-          </h1>
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-headline font-bold text-foreground">
+              {calculatedProperty.name}
+            </h1>
+            <EditPropertyForm property={calculatedProperty} />
+            <DeletePropertyButton property={calculatedProperty} />
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground mt-1">
             <MapPin className="h-4 w-4" />
             <span>{calculatedProperty.location}</span>
           </div>
@@ -603,12 +629,27 @@ export default function PropertyDetailPage() {
 
         <TabsContent value="income" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Rental Income Log</CardTitle>
-              <CardDescription>Consolidated monthly tracking for all occupied units.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>{calculatedProperty.isAirbnb ? "Airbnb Bookings Ledger" : "Rental Income Log"}</CardTitle>
+                <CardDescription>
+                  {calculatedProperty.isAirbnb 
+                    ? "Manage guest reservations and advance deposits." 
+                    : "Consolidated monthly tracking for all occupied units."}
+                </CardDescription>
+              </div>
+              {calculatedProperty.isAirbnb ? (
+                <AddAirbnbBookingForm property={calculatedProperty} />
+              ) : (
+                <AddRentalIncomeForm property={calculatedProperty} />
+              )}
             </CardHeader>
             <CardContent>
-              <TransactionsDataTable columns={rentalIncomeColumns} data={rentalIncomes || []} />
+              <TransactionsDataTable 
+                columns={calculatedProperty.isAirbnb ? airbnbBookingColumns : rentalIncomeColumns} 
+                data={rentalIncomes || []} 
+                onDeleteSelected={handleBulkDeleteIncomes} 
+              />
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,1 +1,1 @@
-# Property Pulse
+# IGM Trust Properties

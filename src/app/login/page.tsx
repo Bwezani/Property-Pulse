@@ -76,7 +76,7 @@ export default function LoginPage() {
           </CardTitle>
           <CardDescription>
             {isSignUp 
-              ? 'Enter your details to get started with Property Pulse' 
+              ? 'Enter your details to get started with IGM Trust Properties' 
               : 'Enter your credentials to access your dashboard'}
           </CardDescription>
         </CardHeader>

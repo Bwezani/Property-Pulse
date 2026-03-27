@@ -7,6 +7,7 @@ import {
   Construction,
   Landmark,
   LineChart,
+  Users,
 } from 'lucide-react';
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
     icon: Construction,
   },
   { href: '/dashboard/reports', label: 'Financial Reports', icon: LineChart },
+  { href: '/dashboard/vendors', label: 'Vendors', icon: Users },
 ];
 
 export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {

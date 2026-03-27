@@ -144,10 +144,11 @@ export function AddMaintenanceBudgetItemForm({
                       className="w-full border rounded-md h-9 px-3 text-sm bg-background"
                     >
                       <option value="">Select Category</option>
-                      <option value="Plumbing">Plumbing</option>
-                      <option value="Electrical">Electrical</option>
-                      <option value="Cleaning">Cleaning</option>
-                      <option value="Painting">Painting</option>
+                      <option value="Kitchen">Kitchen</option>
+                      <option value="Bedroom">Bedroom</option>
+                      <option value="Bathroom">Bathroom</option>
+                      <option value="Living Room">Living Room</option>
+                      <option value="Exterior">Exterior</option>
                       <option value="Other">Other</option>
                     </select>
                   </FormControl>

@@ -40,7 +40,7 @@ export default function DashboardLayout({
       <RentProcessor />
 
       {/* SIDEBAR */}
-      <aside className="hidden border-r bg-card/50 md:flex md:flex-col shadow-sm">
+      <aside className="hidden dark bg-slate-950 text-slate-300 md:flex md:flex-col shadow-2xl z-10 w-[240px] lg:w-[280px]">
         <div className="flex h-14 shrink-0 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <Logo />
         </div>

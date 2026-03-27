@@ -10,7 +10,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const GeneratePropertyDescriptionInputSchema = z.object({
+export const GeneratePropertyDescriptionInputSchema = z.object({
   propertyName: z.string().describe('The name of the property.'),
   location: z.string().describe('The location of the property (e.g., city, neighborhood, address).'),
-  size: z.string().describe('The size of the property (e.g., 
+  size: z.string().describe('The size of the property (e.g., in sq ft or acres).'),
+});

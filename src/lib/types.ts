@@ -12,6 +12,7 @@ export type PropertyUnit = {
   tenantContact: string;
   monthlyRent: number;
   paymentDueDay: number;
+  isAirbnb?: boolean;
 };
 
 export type Property = {
@@ -27,6 +28,7 @@ export type Property = {
   createdAt: string; // ISO date string
   isDeleted: boolean;
   members: Record<string, string>;
+  isAirbnb?: boolean;
 
   // Fields for Finished Properties
   totalInvestment: number;
@@ -71,13 +73,21 @@ export type RentalIncome = {
   propertyId: string;
   unitId?: string; // Track which unit the rent is for
   unitName?: string; // Descriptive name of the unit
-  tenantName: string;
-  amount: number;
+  tenantName: string; // Used for Guest name if Airbnb
+  amount: number; // For Airbnb: Amount PAID towards the booking (often just a deposit initially)
   paymentDate: string; // ISO date string
   dueDate: string; // ISO date string
   paymentMethod: 'Bank Transfer' | 'Cash' | 'Credit Card' | 'System Automated';
-  status: 'Paid' | 'Pending' | 'Overdue';
+  status: 'Paid' | 'Pending' | 'Overdue' | 'Partial Deposit'; // Added Partial Deposit for Airbnb
   monthKey: string; // e.g. "2024-05"
+  
+  // Airbnb Booking extensions
+  isAirbnbBooking?: boolean;
+  totalBookingCost?: number; // Total value of the reservation
+  balanceDue?: number; // How much is left to be paid
+  checkInDate?: string; // ISO date string
+  checkOutDate?: string; // ISO date string
+  contactNumber?: string; // Guest phone number
 };
 
 export type MaintenanceExpense = {
@@ -110,3 +120,13 @@ export type MaintenanceBudgetItem = {
     propertyId: string;
     userId: string;
 };
+
+export type Vendor = {
+  id: string;
+  name: string;
+  contact: string;
+  serviceCategory: string;
+  userId: string;
+  createdAt: string; // ISO date string
+};
+

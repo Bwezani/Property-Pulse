@@ -117,7 +117,7 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
           <span className="sr-only">Edit Unit</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[450px]">
+      <DialogContent className="sm:max-w-[450px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Unit Configuration</DialogTitle>
           <DialogDescription>
