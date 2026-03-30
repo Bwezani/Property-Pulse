@@ -47,7 +47,7 @@ export function ImportUnderConstructionProperties() {
     
     try {
       // Fetch existing properties to prevent duplicates
-      const existingSnapshot = await getDocs(collection(db, 'users', user.uid, 'under_construction_properties'));
+      const existingSnapshot = await getDocs(collection(db, 'users', user.uid, 'construction_properties'));
       const existingNames = new Set(existingSnapshot.docs.map(d => d.data().name.toLowerCase().trim()));
 
       const reader = new FileReader();
@@ -92,8 +92,8 @@ export function ImportUnderConstructionProperties() {
               code: `UCONST-${Date.now()}-${Math.floor(Math.random() * 1000)}`
             };
 
-            const docRef = doc(collection(db, 'users', user.uid, 'under_construction_properties'));
-            await setDoc(docRef, { ...propertyData, id: docRef.id });
+            const docRef = doc(collection(db, 'users', user.uid, 'construction_properties'));
+            await setDoc(docRef, { ...propertyData, id: docRef.id, userId: user.uid });
             imported++;
           }
 

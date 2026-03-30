@@ -98,7 +98,7 @@ export function ImportFinishedProperties() {
             };
 
             const docRef = doc(collection(db, 'users', user.uid, 'finished_properties'));
-            await setDoc(docRef, { ...propertyData, id: docRef.id });
+            await setDoc(docRef, { ...propertyData, id: docRef.id, userId: user.uid });
             imported++;
           }
 

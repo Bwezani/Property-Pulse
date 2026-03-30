@@ -8,6 +8,7 @@ import {
   Landmark,
   LineChart,
   Users,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   },
   { href: '/dashboard/reports', label: 'Financial Reports', icon: LineChart },
   { href: '/dashboard/vendors', label: 'Vendors', icon: Users },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
