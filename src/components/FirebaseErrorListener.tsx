@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useState, useEffect } from "react";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 /**
  * An invisible component that listens for globally emitted 'permission-error' events.
@@ -21,11 +21,11 @@ export function FirebaseErrorListener() {
 
     // The typed emitter will enforce that the callback for 'permission-error'
     // matches the expected payload type (FirestorePermissionError).
-    errorEmitter.on('permission-error', handleError);
+    errorEmitter.on("permission-error", handleError);
 
     // Unsubscribe on unmount to prevent memory leaks.
     return () => {
-      errorEmitter.off('permission-error', handleError);
+      errorEmitter.off("permission-error", handleError);
     };
   }, []);
 

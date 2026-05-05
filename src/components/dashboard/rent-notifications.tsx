@@ -1,35 +1,51 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import { AlertCircle, ChevronRight, Banknote } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import Link from 'next/link';
-import type { Property, RentalIncome } from '@/lib/types';
+import { useMemo } from "react";
+import { AlertCircle, ChevronRight, Banknote } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import Link from "next/link";
+import type { Property, RentalIncome } from "@/lib/types";
 
 interface RentNotificationsProps {
   properties: Property[];
   incomes: RentalIncome[];
 }
 
-export function RentNotifications({ properties, incomes }: RentNotificationsProps) {
+export function RentNotifications({
+  properties,
+  incomes,
+}: RentNotificationsProps) {
   const pendingRents = useMemo(() => {
-    const pending: { propertyId: string; propertyName: string; unitName: string; tenant: string; dueDay: number }[] = [];
+    const pending: {
+      propertyId: string;
+      propertyName: string;
+      unitName: string;
+      tenant: string;
+      dueDay: number;
+    }[] = [];
     const now = new Date();
     const currentDay = now.getDate();
-    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
     properties.forEach((property) => {
       // Ignore if under construction
-      if (property.type !== 'Finished') return;
-      
+      if (property.type !== "Finished") return;
+
       const isMultiUnit = property.unitsList && property.unitsList.length > 0;
 
       if (isMultiUnit) {
         property.unitsList?.forEach((unit) => {
-          if (unit.status === 'Occupied' && currentDay >= unit.paymentDueDay && !property.isAirbnb) {
+          if (
+            unit.status === "Occupied" &&
+            currentDay >= unit.paymentDueDay &&
+            !property.isAirbnb
+          ) {
             // Check if rent is paid
             const isPaid = incomes.some(
-              (i) => i.propertyId === property.id && i.unitId === unit.id && i.monthKey === currentMonthKey
+              (i) =>
+                i.propertyId === property.id &&
+                i.unitId === unit.id &&
+                i.monthKey === currentMonthKey,
             );
             if (!isPaid) {
               pending.push({
@@ -43,15 +59,22 @@ export function RentNotifications({ properties, incomes }: RentNotificationsProp
           }
         });
       } else {
-        if (property.status === 'Occupied' && currentDay >= property.paymentDueDay && !property.isAirbnb) {
+        if (
+          property.status === "Occupied" &&
+          currentDay >= property.paymentDueDay &&
+          !property.isAirbnb
+        ) {
           const isPaid = incomes.some(
-            (i) => i.propertyId === property.id && i.unitId === 'main' && i.monthKey === currentMonthKey
+            (i) =>
+              i.propertyId === property.id &&
+              i.unitId === "main" &&
+              i.monthKey === currentMonthKey,
           );
           if (!isPaid) {
             pending.push({
               propertyId: property.id,
               propertyName: property.name,
-              unitName: 'Main',
+              unitName: "Main",
               tenant: property.tenantName,
               dueDay: property.paymentDueDay,
             });
@@ -73,7 +96,11 @@ export function RentNotifications({ properties, incomes }: RentNotificationsProp
       </h2>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {pendingRents.map((rent, idx) => (
-          <Alert key={idx} variant="destructive" className="bg-destructive/10 border-destructive/20 relative">
+          <Alert
+            key={idx}
+            variant="destructive"
+            className="bg-destructive/10 border-destructive/20 relative"
+          >
             <AlertCircle className="h-4 w-4" />
             <AlertTitle className="text-sm font-bold">Overdue Rent</AlertTitle>
             <AlertDescription className="text-xs">
@@ -81,7 +108,7 @@ export function RentNotifications({ properties, incomes }: RentNotificationsProp
                 {rent.propertyName} - {rent.unitName}
               </span>
               <span className="block text-muted-foreground opacity-80">
-                Tenant: {rent.tenant || 'Unknown'} (Due: {rent.dueDay})
+                Tenant: {rent.tenant || "Unknown"} (Due: {rent.dueDay})
               </span>
             </AlertDescription>
             <Link

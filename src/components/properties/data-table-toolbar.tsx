@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { type Table } from '@tanstack/react-table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { type Table } from "@tanstack/react-table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -10,8 +10,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { SlidersHorizontal } from 'lucide-react';
+} from "@/components/ui/dropdown-menu";
+import { SlidersHorizontal } from "lucide-react";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -25,9 +25,9 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-1 items-center space-x-2">
         <Input
           placeholder="Filter properties..."
-          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn('name')?.setFilterValue(event.target.value)
+            table.getColumn("name")?.setFilterValue(event.target.value)
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
@@ -45,7 +45,8 @@ export function DataTableToolbar<TData>({
               .getAllColumns()
               .filter(
                 (column) =>
-                  typeof column.accessorFn !== 'undefined' && column.getCanHide()
+                  typeof column.accessorFn !== "undefined" &&
+                  column.getCanHide(),
               )
               .map((column) => {
                 return (
@@ -53,9 +54,11 @@ export function DataTableToolbar<TData>({
                     key={column.id}
                     className="capitalize"
                     checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
                   >
-                    {column.id.replace(/_/g, ' ')}
+                    {column.id.replace(/_/g, " ")}
                   </DropdownMenuCheckboxItem>
                 );
               })}

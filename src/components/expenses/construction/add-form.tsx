@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -20,49 +20,53 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast';
-import { PlusCircle } from 'lucide-react';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { formatCurrency } from '@/lib/utils';
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
+import { PlusCircle } from "lucide-react";
+import { useFirestore, useUser } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
+import { formatCurrency } from "@/lib/utils";
 
 const formSchema = z.object({
-  itemName: z.string().min(1, 'Item name is required.'),
-  quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
-  unitPrice: z.coerce.number().min(0.01, 'Unit price must be positive.'),
-  vendor: z.string().min(1, 'Vendor is required.'),
+  itemName: z.string().min(1, "Item name is required."),
+  quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
+  unitPrice: z.coerce.number().min(0.01, "Unit price must be positive."),
+  vendor: z.string().min(1, "Vendor is required."),
   purchaseDate: z.string().min(1, "A date is required."),
   notes: z.string().optional(),
 });
 
 type ConstructionFormValues = z.infer<typeof formSchema>;
 
-export function AddConstructionExpenseForm({ propertyId }: { propertyId: string }) {
+export function AddConstructionExpenseForm({
+  propertyId,
+}: {
+  propertyId: string;
+}) {
   const [open, setOpen] = useState(false);
   const db = useFirestore();
   const { user } = useUser();
-  const today = new Date().toISOString().split('T')[0];
-  
+  const today = new Date().toISOString().split("T")[0];
+
   const form = useForm<ConstructionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       quantity: 1,
-      itemName: '',
+      itemName: "",
       unitPrice: 0,
-      vendor: '',
-      notes: '',
+      vendor: "",
+      notes: "",
       purchaseDate: today,
-    }
+    },
   });
 
-  const quantity = form.watch('quantity');
-  const unitPrice = form.watch('unitPrice');
+  const quantity = form.watch("quantity");
+  const unitPrice = form.watch("unitPrice");
   const [totalPrice, setTotalPrice] = useState(0);
 
   useEffect(() => {
@@ -82,24 +86,35 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
       totalPrice,
       vendor: data.vendor,
       purchaseDate: new Date(data.purchaseDate).toISOString(),
-      notes: data.notes || '',
+      notes: data.notes || "",
       createdAt: new Date().toISOString(),
     };
 
-    const targetCollection = collection(db, 'users', user.uid, 'construction_expenses');
+    const targetCollection = collection(
+      db,
+      "users",
+      user.uid,
+      "construction_expenses",
+    );
 
     addDoc(targetCollection, expenseData)
       .then(() => {
-        toast({ title: 'Expense Added', description: 'The construction expense has been successfully added.' });
+        toast({
+          title: "Expense Added",
+          description: "The construction expense has been successfully added.",
+        });
         form.reset();
         setOpen(false);
       })
       .catch(async () => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: targetCollection.path,
-          operation: 'create',
-          requestResourceData: expenseData,
-        }));
+        errorEmitter.emit(
+          "permission-error",
+          new FirestorePermissionError({
+            path: targetCollection.path,
+            operation: "create",
+            requestResourceData: expenseData,
+          }),
+        );
       });
   };
 
@@ -126,54 +141,66 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Item Name</FormLabel>
-                  <FormControl><Input placeholder="e.g. Steel Beams" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="e.g. Steel Beams" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantity</FormLabel>
-                      <FormControl><Input type="number" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="unitPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unit Price</FormLabel>
-                      <FormControl><Input type="number" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="unitPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit Price</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-             <p className="text-sm font-bold">Total: {formatCurrency(totalPrice)}</p>
+            <p className="text-sm font-bold">
+              Total: {formatCurrency(totalPrice)}
+            </p>
             <FormField
               control={form.control}
               name="vendor"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Vendor</FormLabel>
-                  <FormControl><Input placeholder="e.g. BuildIt Supplies" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="e.g. BuildIt Supplies" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="purchaseDate"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Purchase Date</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -184,14 +211,16 @@ export function AddConstructionExpenseForm({ propertyId }: { propertyId: string 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
-                  <FormControl><Textarea {...field} /></FormControl>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Adding...' : 'Add Expense'}
+                {form.formState.isSubmitting ? "Adding..." : "Add Expense"}
               </Button>
             </DialogFooter>
           </form>

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import {
   Card,
@@ -8,30 +8,30 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
-import type { Property } from "@/lib/types"
+} from "@/components/ui/chart";
+import type { Property } from "@/lib/types";
 
 const chartConfig = {
   profit: {
     label: "Net Profit",
     color: "hsl(var(--chart-1))",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 type ProfitLossChartProps = {
-    properties: Property[];
-}
+  properties: Property[];
+};
 
 export function ProfitLossChart({ properties }: ProfitLossChartProps) {
   const chartData = properties
-    .filter(p => p.type === "Finished")
-    .map(p => ({
+    .filter((p) => p.type === "Finished")
+    .map((p) => ({
       property: p.name,
       profit: p.netProfit,
     }))
@@ -57,15 +57,15 @@ export function ProfitLossChart({ properties }: ProfitLossChartProps) {
           >
             <CartesianGrid vertical={false} />
             <YAxis
-                tickFormatter={(value) => {
-                  return new Intl.NumberFormat('en-US', {
-                    notation: 'compact',
-                    compactDisplay: 'short',
-                  }).format(value);
-                }}
-                axisLine={false}
-                tickLine={false}
-                tickMargin={8}
+              tickFormatter={(value) => {
+                return new Intl.NumberFormat("en-US", {
+                  notation: "compact",
+                  compactDisplay: "short",
+                }).format(value);
+              }}
+              axisLine={false}
+              tickLine={false}
+              tickMargin={8}
             />
             <XAxis
               dataKey="property"
@@ -75,7 +75,7 @@ export function ProfitLossChart({ properties }: ProfitLossChartProps) {
               tick={{
                 fontSize: 12,
                 angle: -30,
-                textAnchor: 'end',
+                textAnchor: "end",
               }}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
@@ -105,5 +105,5 @@ export function ProfitLossChart({ properties }: ProfitLossChartProps) {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

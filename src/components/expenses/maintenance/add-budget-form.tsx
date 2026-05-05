@@ -1,10 +1,9 @@
+"use client";
 
-'use client';
-
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -21,23 +20,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PlusCircle } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PlusCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useFirestore, useUser } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const formSchema = z.object({
-  itemName: z.string().min(1, 'Item name is required.'),
-  category: z.string().min(1, 'Category is required.'),
+  itemName: z.string().min(1, "Item name is required."),
+  category: z.string().min(1, "Category is required."),
   customCategory: z.string().optional(),
   estimatedCost: z.coerce
     .number()
-    .min(0.01, 'Estimated cost must be greater than 0.'),
+    .min(0.01, "Estimated cost must be greater than 0."),
 });
 
 type MaintenanceBudgetFormValues = z.infer<typeof formSchema>;
@@ -54,9 +53,9 @@ export function AddMaintenanceBudgetItemForm({
   const form = useForm<MaintenanceBudgetFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      itemName: '',
-      category: '',
-      customCategory: '',
+      itemName: "",
+      category: "",
+      customCategory: "",
       estimatedCost: 0,
     },
   });
@@ -65,37 +64,44 @@ export function AddMaintenanceBudgetItemForm({
     if (!db || !user) return;
 
     const finalCategory =
-        values.category === 'Other'
-          ? values.customCategory
-          : values.category;
-  
+      values.category === "Other" ? values.customCategory : values.category;
+
     const budgetData = {
-        userId: user.uid,
-        propertyId,
-        itemName: values.itemName,
-        category: finalCategory || 'Uncategorized',
-        estimatedCost: values.estimatedCost,
-        actualCost: 0,
-        createdAt: new Date().toISOString(),
+      userId: user.uid,
+      propertyId,
+      itemName: values.itemName,
+      category: finalCategory || "Uncategorized",
+      estimatedCost: values.estimatedCost,
+      actualCost: 0,
+      createdAt: new Date().toISOString(),
     };
 
-    const targetCollection = collection(db, 'users', user.uid, 'maintenance_budget_items');
+    const targetCollection = collection(
+      db,
+      "users",
+      user.uid,
+      "maintenance_budget_items",
+    );
 
     addDoc(targetCollection, budgetData)
       .then(() => {
         toast({
-            title: 'Budget Item Added',
-            description: 'The maintenance budget item has been successfully added.',
+          title: "Budget Item Added",
+          description:
+            "The maintenance budget item has been successfully added.",
         });
         form.reset();
         setOpen(false);
       })
       .catch(async (error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
+        errorEmitter.emit(
+          "permission-error",
+          new FirestorePermissionError({
             path: targetCollection.path,
-            operation: 'create',
+            operation: "create",
             requestResourceData: budgetData,
-        }));
+          }),
+        );
       });
   };
 
@@ -115,10 +121,7 @@ export function AddMaintenanceBudgetItemForm({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="itemName"
@@ -156,7 +159,7 @@ export function AddMaintenanceBudgetItemForm({
                 </FormItem>
               )}
             />
-            {form.watch('category') === 'Other' && (
+            {form.watch("category") === "Other" && (
               <FormField
                 control={form.control}
                 name="customCategory"
@@ -164,10 +167,7 @@ export function AddMaintenanceBudgetItemForm({
                   <FormItem>
                     <FormLabel>Enter Custom Category</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="e.g. Security"
-                        {...field}
-                      />
+                      <Input placeholder="e.g. Security" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -189,11 +189,8 @@ export function AddMaintenanceBudgetItemForm({
               )}
             />
             <DialogFooter>
-              <Button
-                type="submit"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? 'Adding...' : 'Add Item'}
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Adding..." : "Add Item"}
               </Button>
             </DialogFooter>
           </form>

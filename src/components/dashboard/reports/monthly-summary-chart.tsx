@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -15,8 +15,8 @@ import {
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
-} from "@/components/ui/chart"
-import type { RentalIncome, MaintenanceExpense } from "@/lib/types"
+} from "@/components/ui/chart";
+import type { RentalIncome, MaintenanceExpense } from "@/lib/types";
 
 const chartConfig = {
   income: {
@@ -27,43 +27,53 @@ const chartConfig = {
     label: "Expenses",
     color: "hsl(var(--chart-2))",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 type MonthlySummaryChartProps = {
-    incomes: RentalIncome[];
-    expenses: MaintenanceExpense[];
-}
+  incomes: RentalIncome[];
+  expenses: MaintenanceExpense[];
+};
 
-export function MonthlySummaryChart({ incomes, expenses }: MonthlySummaryChartProps) {
-    const data = Array.from({ length: 6 }, (_, i) => {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        return { month: d.toLocaleString('default', { month: 'short' }), year: d.getFullYear() };
-    }).reverse();
+export function MonthlySummaryChart({
+  incomes,
+  expenses,
+}: MonthlySummaryChartProps) {
+  const data = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    return {
+      month: d.toLocaleString("default", { month: "short" }),
+      year: d.getFullYear(),
+    };
+  }).reverse();
 
-    const chartData = data.map(({ month, year }) => {
-        const monthIndex = new Date(`${month} 1, ${year}`).getMonth();
-        
-        const monthlyIncome = incomes
-            .filter(inc => {
-                const incDate = new Date(inc.paymentDate);
-                return incDate.getMonth() === monthIndex && incDate.getFullYear() === year;
-            })
-            .reduce((acc, inc) => acc + inc.amount, 0);
+  const chartData = data.map(({ month, year }) => {
+    const monthIndex = new Date(`${month} 1, ${year}`).getMonth();
 
-        const monthlyExpenses = expenses
-            .filter(exp => {
-                const expDate = new Date(exp.date);
-                return expDate.getMonth() === monthIndex && expDate.getFullYear() === year;
-            })
-            .reduce((acc, exp) => acc + exp.amount, 0);
+    const monthlyIncome = incomes
+      .filter((inc) => {
+        const incDate = new Date(inc.paymentDate);
+        return (
+          incDate.getMonth() === monthIndex && incDate.getFullYear() === year
+        );
+      })
+      .reduce((acc, inc) => acc + inc.amount, 0);
 
-        return {
-            month,
-            income: monthlyIncome,
-            expenses: monthlyExpenses,
-        };
-    });
+    const monthlyExpenses = expenses
+      .filter((exp) => {
+        const expDate = new Date(exp.date);
+        return (
+          expDate.getMonth() === monthIndex && expDate.getFullYear() === year
+        );
+      })
+      .reduce((acc, exp) => acc + exp.amount, 0);
+
+    return {
+      month,
+      income: monthlyIncome,
+      expenses: monthlyExpenses,
+    };
+  });
 
   return (
     <Card>
@@ -83,9 +93,9 @@ export function MonthlySummaryChart({ incomes, expenses }: MonthlySummaryChartPr
             />
             <YAxis
               tickFormatter={(value) => {
-                return new Intl.NumberFormat('en-US', {
-                  notation: 'compact',
-                  compactDisplay: 'short',
+                return new Intl.NumberFormat("en-US", {
+                  notation: "compact",
+                  compactDisplay: "short",
                   minimumFractionDigits: 1,
                   maximumFractionDigits: 1,
                 }).format(value);
@@ -99,5 +109,5 @@ export function MonthlySummaryChart({ incomes, expenses }: MonthlySummaryChartPr
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

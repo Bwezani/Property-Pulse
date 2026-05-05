@@ -1,37 +1,39 @@
-'use client';
-import type { ColumnDef } from '@tanstack/react-table';
-import type { ConstructionExpense } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
-import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+"use client";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { ConstructionExpense } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { useFirebase } from "@/firebase";
+import { doc, deleteDoc } from "firebase/firestore";
+import { formatCurrency, formatFullCurrency } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 
 export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
   {
-    accessorKey: 'itemName',
-    header: 'Item',
+    accessorKey: "itemName",
+    header: "Item",
   },
   {
-    accessorKey: 'quantity',
-    header: 'Quantity',
+    accessorKey: "quantity",
+    header: "Quantity",
   },
   {
-    accessorKey: 'unitPrice',
-    header: 'Unit Price',
+    accessorKey: "unitPrice",
+    header: "Unit Price",
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue('unitPrice'));
+      const amount = parseFloat(row.getValue("unitPrice"));
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="font-medium cursor-help">{formatCurrency(amount)}</div>
+              <div className="font-medium cursor-help">
+                {formatCurrency(amount)}
+              </div>
             </TooltipTrigger>
             <TooltipContent>
               <p>{formatFullCurrency(amount)}</p>
@@ -42,15 +44,17 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     },
   },
   {
-    accessorKey: 'totalPrice',
-    header: 'Total Price',
+    accessorKey: "totalPrice",
+    header: "Total Price",
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue('totalPrice'));
+      const amount = parseFloat(row.getValue("totalPrice"));
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="font-medium cursor-help">{formatCurrency(amount)}</div>
+              <div className="font-medium cursor-help">
+                {formatCurrency(amount)}
+              </div>
             </TooltipTrigger>
             <TooltipContent>
               <p>{formatFullCurrency(amount)}</p>
@@ -61,17 +65,18 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
     },
   },
   {
-    accessorKey: 'vendor',
-    header: 'Vendor',
+    accessorKey: "vendor",
+    header: "Vendor",
   },
   {
-    accessorKey: 'purchaseDate',
-    header: 'Date',
-    cell: ({ row }) => new Date(row.getValue('purchaseDate')).toLocaleDateString(),
+    accessorKey: "purchaseDate",
+    header: "Date",
+    cell: ({ row }) =>
+      new Date(row.getValue("purchaseDate")).toLocaleDateString(),
   },
   {
-    id: 'actions',
-    header: '',
+    id: "actions",
+    header: "",
     cell: ({ row }) => {
       const expense = row.original;
       const { firestore: db, user } = useFirebase();
@@ -79,11 +84,24 @@ export const constructionColumns: ColumnDef<ConstructionExpense>[] = [
       const handleDelete = async () => {
         if (!db || !user) return;
         try {
-          const docRef = doc(db, 'users', user.uid, 'construction_expenses', expense.id);
+          const docRef = doc(
+            db,
+            "users",
+            user.uid,
+            "construction_expenses",
+            expense.id,
+          );
           await deleteDoc(docRef);
-          toast({ title: 'Expense Deleted', description: 'Record removed successfully.' });
+          toast({
+            title: "Expense Deleted",
+            description: "Record removed successfully.",
+          });
         } catch (error) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete record.' });
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not delete record.",
+          });
         }
       };
 

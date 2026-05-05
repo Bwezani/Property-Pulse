@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Settings2, Trash2, CheckCircle2 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { useFirestore, useUser } from "@/firebase";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Settings2, Trash2, CheckCircle2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -15,36 +21,44 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const COLLECTIONS_TO_WIPE = [
-  'finished_properties',
-  'construction_properties', // True schema
-  'under_construction_properties', // Purge any orphaned data from early testing
-  'rental_incomes',
-  'construction_expenses',
-  'maintenance_expenses',
-  'vendors',
-  'construction_budget',
-  'maintenance_budget'
+  "finished_properties",
+  "construction_properties", // True schema
+  "under_construction_properties", // Purge any orphaned data from early testing
+  "rental_incomes",
+  "construction_expenses",
+  "maintenance_expenses",
+  "vendors",
+  "construction_budget",
+  "maintenance_budget",
 ];
 
 export default function SettingsPage() {
   const db = useFirestore();
   const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
-  const [confirmText, setConfirmText] = useState('');
+  const [confirmText, setConfirmText] = useState("");
   const [isWiping, setIsWiping] = useState(false);
 
   const handleWipeDatabase = async () => {
-    if (confirmText !== 'WIPE') {
-      toast({ variant: 'destructive', title: 'Invalid Confirmation', description: 'You must type exactly "WIPE".' });
+    if (confirmText !== "WIPE") {
+      toast({
+        variant: "destructive",
+        title: "Invalid Confirmation",
+        description: 'You must type exactly "WIPE".',
+      });
       return;
     }
 
     if (!db || !user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Not authenticated.' });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Not authenticated.",
+      });
       return;
     }
 
@@ -54,32 +68,38 @@ export default function SettingsPage() {
     try {
       // Loop through all data collections for this user
       for (const colName of COLLECTIONS_TO_WIPE) {
-        const colRef = collection(db, 'users', user.uid, colName);
+        const colRef = collection(db, "users", user.uid, colName);
         const snapshot = await getDocs(colRef);
-        
+
         // Delete all docs in this collection
-        const deletePromises = snapshot.docs.map((document) => deleteDoc(document.ref));
+        const deletePromises = snapshot.docs.map((document) =>
+          deleteDoc(document.ref),
+        );
         await Promise.all(deletePromises);
-        
+
         totalDeleted += snapshot.docs.length;
       }
 
-      toast({ 
-        title: 'Clean Slate Generated', 
+      toast({
+        title: "Clean Slate Generated",
         description: `Successfully wiped ${totalDeleted} records across the entire database.`,
-        duration: 8000
+        duration: 8000,
       });
       setIsOpen(false);
-      setConfirmText('');
+      setConfirmText("");
 
       // Refresh page to clear local state caches
       setTimeout(() => {
         window.location.reload();
       }, 1500);
-
     } catch (error) {
       console.error(error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to completely wipe the database. Check console logs.' });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          "Failed to completely wipe the database. Check console logs.",
+      });
     } finally {
       setIsWiping(false);
     }
@@ -109,16 +129,24 @@ export default function SettingsPage() {
               Developer Danger Zone
             </CardTitle>
             <CardDescription className="text-zinc-500 max-w-2xl">
-              This section contains destructive actions meant for development and testing. Wiping your data will clear all properties, income logs, and expenses, restoring your account to a clean slate.
+              This section contains destructive actions meant for development
+              and testing. Wiping your data will clear all properties, income
+              logs, and expenses, restoring your account to a clean slate.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Dialog open={isOpen} onOpenChange={(val) => {
-              setIsOpen(val);
-              if (!val) setConfirmText('');
-            }}>
+            <Dialog
+              open={isOpen}
+              onOpenChange={(val) => {
+                setIsOpen(val);
+                if (!val) setConfirmText("");
+              }}
+            >
               <DialogTrigger asChild>
-                <Button variant="destructive" className="bg-red-600 hover:bg-red-700 shadow-lg shadow-red-900/20">
+                <Button
+                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700 shadow-lg shadow-red-900/20"
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Wipe Database
                 </Button>
@@ -130,15 +158,17 @@ export default function SettingsPage() {
                     Destructive Action Warning
                   </DialogTitle>
                   <DialogDescription>
-                    You are about to permanently delete all property, tenant, financial, and budget data associated with your account. This action cannot be undone.
+                    You are about to permanently delete all property, tenant,
+                    financial, and budget data associated with your account.
+                    This action cannot be undone.
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-4 py-4">
                   <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-400 text-sm rounded-md border border-red-200 dark:border-red-900/50">
                     <strong>Please type "WIPE" below to confirm:</strong>
                   </div>
-                  <Input 
+                  <Input
                     value={confirmText}
                     onChange={(e) => setConfirmText(e.target.value)}
                     placeholder="WIPE"
@@ -147,16 +177,20 @@ export default function SettingsPage() {
                 </div>
 
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isWiping}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsOpen(false)}
+                    disabled={isWiping}
+                  >
                     Cancel
                   </Button>
-                  <Button 
-                    variant="destructive" 
+                  <Button
+                    variant="destructive"
                     onClick={handleWipeDatabase}
-                    disabled={confirmText !== 'WIPE' || isWiping}
+                    disabled={confirmText !== "WIPE" || isWiping}
                     className="bg-red-600 hover:bg-red-700 w-[140px]"
                   >
-                    {isWiping ? 'Erasing...' : 'Confirm Wipe'}
+                    {isWiping ? "Erasing..." : "Confirm Wipe"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -166,7 +200,10 @@ export default function SettingsPage() {
               <div className="text-sm">
                 <p className="font-medium">Perfect for Initial Testing</p>
                 <p className="text-muted-foreground mt-1">
-                  Use this tool to easily clean up test properties and trial data before you start logging live building operations. Once your app goes strictly "live", it is recommended to remove this settings page.
+                  Use this tool to easily clean up test properties and trial
+                  data before you start logging live building operations. Once
+                  your app goes strictly "live", it is recommended to remove
+                  this settings page.
                 </p>
               </div>
             </div>

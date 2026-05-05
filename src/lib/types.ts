@@ -1,4 +1,3 @@
-
 export type PropertyCategory = {
   id: string;
   name: string;
@@ -7,7 +6,7 @@ export type PropertyCategory = {
 export type PropertyUnit = {
   id: string;
   unitName: string;
-  status: 'Occupied' | 'Vacant';
+  status: "Occupied" | "Vacant";
   tenantName: string;
   tenantContact: string;
   monthlyRent: number;
@@ -23,7 +22,7 @@ export type Property = {
   location: string;
   size: string;
   description: string;
-  type: 'Finished' | 'Under Construction';
+  type: "Finished" | "Under Construction";
   imageId: string;
   createdAt: string; // ISO date string
   isDeleted: boolean;
@@ -32,7 +31,7 @@ export type Property = {
 
   // Fields for Finished Properties
   totalInvestment: number;
-  status: 'Occupied' | 'Vacant'; // For single unit properties
+  status: "Occupied" | "Vacant"; // For single unit properties
   monthlyRent: number;
   paymentDueDay: number;
   tenantName: string;
@@ -41,7 +40,13 @@ export type Property = {
   unitsList?: PropertyUnit[]; // Granular details for multi-unit
 
   // Fields for Under Construction Properties
-  constructionStage: 'Planning' | 'Foundation' | 'Framing' | 'Roofing' | 'Finishing' | 'Completed';
+  constructionStage:
+    | "Planning"
+    | "Foundation"
+    | "Framing"
+    | "Roofing"
+    | "Finishing"
+    | "Completed";
   estimatedBudget?: number;
 
   // Auto-calculated fields
@@ -51,7 +56,7 @@ export type Property = {
   remainingInvestment: number;
   totalProfit: number;
   netProfit: number;
-  
+
   // AI Feature
   costOverrunAlert?: string;
 };
@@ -77,10 +82,10 @@ export type RentalIncome = {
   amount: number; // For Airbnb: Amount PAID towards the booking (often just a deposit initially)
   paymentDate: string; // ISO date string
   dueDate: string; // ISO date string
-  paymentMethod: 'Bank Transfer' | 'Cash' | 'Credit Card' | 'System Automated';
-  status: 'Paid' | 'Pending' | 'Overdue' | 'Partial Deposit'; // Added Partial Deposit for Airbnb
+  paymentMethod: "Bank Transfer" | "Cash" | "Credit Card" | "System Automated";
+  status: "Paid" | "Pending" | "Overdue" | "Partial Deposit"; // Added Partial Deposit for Airbnb
   monthKey: string; // e.g. "2024-05"
-  
+
   // Airbnb Booking extensions
   isAirbnbBooking?: boolean;
   totalBookingCost?: number; // Total value of the reservation
@@ -93,7 +98,7 @@ export type RentalIncome = {
 export type MaintenanceExpense = {
   id: string;
   propertyId: string;
-  expenseType: 'Repair' | 'Utility' | 'Cleaning' | 'Other';
+  expenseType: "Repair" | "Utility" | "Cleaning" | "Other";
   description: string;
   amount: number;
   date: string; // ISO date string
@@ -112,13 +117,13 @@ export type ConstructionBudgetItem = {
 };
 
 export type MaintenanceBudgetItem = {
-    id: string;
-    itemName: string;
-    category: string;
-    estimatedCost: number;
-    actualCost?: number;
-    propertyId: string;
-    userId: string;
+  id: string;
+  itemName: string;
+  category: string;
+  estimatedCost: number;
+  actualCost?: number;
+  propertyId: string;
+  userId: string;
 };
 
 export type Vendor = {
@@ -129,4 +134,3 @@ export type Vendor = {
   userId: string;
   createdAt: string; // ISO date string
 };
-

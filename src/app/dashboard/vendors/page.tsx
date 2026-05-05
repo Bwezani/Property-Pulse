@@ -1,13 +1,18 @@
-'use client';
+"use client";
 
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Users } from 'lucide-react';
-import type { Vendor } from '@/lib/types';
-import { vendorColumns } from '@/components/vendors/columns';
-import { DataTable } from '@/components/properties/data-table';
-import { AddVendorForm } from '@/components/vendors/add-vendor-form';
+import {
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
+  useUser,
+} from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, Users } from "lucide-react";
+import type { Vendor } from "@/lib/types";
+import { vendorColumns } from "@/components/vendors/columns";
+import { DataTable } from "@/components/properties/data-table";
+import { AddVendorForm } from "@/components/vendors/add-vendor-form";
 
 export default function VendorsPage() {
   const db = useFirestore();
@@ -15,9 +20,12 @@ export default function VendorsPage() {
 
   const vendorsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'users', user.uid, 'vendors'), where('userId', '==', user.uid));
+    return query(
+      collection(db, "users", user.uid, "vendors"),
+      where("userId", "==", user.uid),
+    );
   }, [db, user]);
-  
+
   const { data: vendors, isLoading } = useCollection<Vendor>(vendorsQuery);
 
   if (isUserLoading || isLoading) {

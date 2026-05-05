@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   BarChart,
@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-} from 'recharts';
+} from "recharts";
 
 interface ExpenseSummary {
   category: string;
@@ -33,10 +33,10 @@ export function ConstructionExpenseBarChart({ data }: Props) {
           <YAxis />
           <Tooltip />
           <Bar
-  dataKey="amount"
-  fill="hsl(var(--chart-1))"
-  radius={[8, 8, 0, 0]}
-/>
+            dataKey="amount"
+            fill="hsl(var(--chart-1))"
+            radius={[8, 8, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

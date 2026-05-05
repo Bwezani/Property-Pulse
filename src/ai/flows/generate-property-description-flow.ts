@@ -1,4 +1,4 @@
-'use server';
+"use server";
 /**
  * @fileOverview A Genkit flow for generating descriptive property overviews.
  *
@@ -7,11 +7,17 @@
  * - GeneratePropertyDescriptionOutput - The return type for the generatePropertyDescription function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { ai } from "@/ai/genkit";
+import { z } from "genkit";
 
 export const GeneratePropertyDescriptionInputSchema = z.object({
-  propertyName: z.string().describe('The name of the property.'),
-  location: z.string().describe('The location of the property (e.g., city, neighborhood, address).'),
-  size: z.string().describe('The size of the property (e.g., in sq ft or acres).'),
+  propertyName: z.string().describe("The name of the property."),
+  location: z
+    .string()
+    .describe(
+      "The location of the property (e.g., city, neighborhood, address).",
+    ),
+  size: z
+    .string()
+    .describe("The size of the property (e.g., in sq ft or acres)."),
 });

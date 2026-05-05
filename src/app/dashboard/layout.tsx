@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { DashboardHeader } from '@/components/dashboard/header';
-import { DashboardNav } from '@/components/dashboard/nav';
-import { Logo } from '@/components/logo';
-import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import { RentProcessor } from '@/components/properties/rent-processor';
+import { DashboardHeader } from "@/components/dashboard/header";
+import { DashboardNav } from "@/components/dashboard/nav";
+import { Logo } from "@/components/logo";
+import { useUser } from "@/firebase";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import { RentProcessor } from "@/components/properties/rent-processor";
 
 export default function DashboardLayout({
   children,
@@ -19,7 +19,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [user, isUserLoading, router]);
 

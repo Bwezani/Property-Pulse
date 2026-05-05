@@ -1,4 +1,4 @@
-import data from './placeholder-images.json';
+import data from "./placeholder-images.json";
 
 export type ImagePlaceholder = {
   id: string;
@@ -10,5 +10,5 @@ export type ImagePlaceholder = {
 const placeholderImages: ImagePlaceholder[] = data.placeholderImages;
 
 export const PlaceHolderImagesMap = new Map<string, ImagePlaceholder>(
-  placeholderImages.map((image) => [image.id, image])
+  placeholderImages.map((image) => [image.id, image]),
 );

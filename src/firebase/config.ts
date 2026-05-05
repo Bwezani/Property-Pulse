@@ -5,5 +5,5 @@ export const firebaseConfig = {
   storageBucket: "property-pulse-d4912.firebasestorage.app",
   messagingSenderId: "435889303175",
   appId: "1:435889303175:web:accf522d39505e9a7c9222",
-  measurementId: "G-K0Q5DH4XZH"
+  measurementId: "G-K0Q5DH4XZH",
 };

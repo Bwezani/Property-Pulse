@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -12,60 +12,82 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Building2, User, Home, Trash2, ArrowLeft, Save, LayoutGrid } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-import Link from 'next/link';
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Building2,
+  User,
+  Home,
+  Trash2,
+  ArrowLeft,
+  Save,
+  LayoutGrid,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useFirestore, useUser } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
+import Link from "next/link";
 
 const CATEGORIES = [
-  { id: 'stand-alone', name: 'Stand Alone' },
-  { id: 'apartment', name: 'Apartment' },
-  { id: 'flat', name: 'Flat' },
-  { id: 'bedsit', name: 'Bedsit' },
-  { id: 'commercial', name: 'Commercial Space' },
-  { id: 'warehouse', name: 'Warehouse' },
-  { id: 'airbnb', name: 'Airbnb / Short Term' },
-  { id: 'other', name: 'Other' },
+  { id: "stand-alone", name: "Stand Alone" },
+  { id: "apartment", name: "Apartment" },
+  { id: "flat", name: "Flat" },
+  { id: "bedsit", name: "Bedsit" },
+  { id: "commercial", name: "Commercial Space" },
+  { id: "warehouse", name: "Warehouse" },
+  { id: "airbnb", name: "Airbnb / Short Term" },
+  { id: "other", name: "Other" },
 ];
 
-const MULTI_UNIT_CATEGORIES = ['apartment', 'flat', 'commercial', 'warehouse', 'airbnb'];
+const MULTI_UNIT_CATEGORIES = [
+  "apartment",
+  "flat",
+  "commercial",
+  "warehouse",
+  "airbnb",
+];
 
 const unitSchema = z.object({
-  unitName: z.string().min(1, 'Unit name/number is required.'),
-  status: z.enum(['Occupied', 'Vacant']),
-  monthlyRent: z.coerce.number().min(0, 'Rent cannot be negative.'),
+  unitName: z.string().min(1, "Unit name/number is required."),
+  status: z.enum(["Occupied", "Vacant"]),
+  monthlyRent: z.coerce.number().min(0, "Rent cannot be negative."),
   paymentDueDay: z.coerce.number().min(1).max(31),
-  tenantName: z.string().optional().default(''),
-  tenantContact: z.string().optional().default(''),
+  tenantName: z.string().optional().default(""),
+  tenantContact: z.string().optional().default(""),
 });
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Property name is required.'),
-  categoryId: z.string().min(1, 'Category is required.'),
-  location: z.string().min(1, 'Location is required.'),
-  size: z.string().min(1, 'Size is required.'),
-  totalInvestment: z.coerce.number().min(0.01, 'Total investment must be greater than 0.'),
-  units: z.coerce.number().min(1, 'Units must be at least 1.').default(1),
+  name: z.string().min(1, "Property name is required."),
+  categoryId: z.string().min(1, "Category is required."),
+  location: z.string().min(1, "Location is required."),
+  size: z.string().min(1, "Size is required."),
+  totalInvestment: z.coerce
+    .number()
+    .min(0.01, "Total investment must be greater than 0."),
+  units: z.coerce.number().min(1, "Units must be at least 1.").default(1),
   unitsList: z.array(unitSchema),
-  status: z.enum(['Occupied', 'Vacant']).optional().default('Vacant'),
+  status: z.enum(["Occupied", "Vacant"]).optional().default("Vacant"),
   monthlyRent: z.coerce.number().optional().default(0),
   paymentDueDay: z.coerce.number().optional().default(1),
-  tenantName: z.string().optional().default(''),
-  tenantContact: z.string().optional().default(''),
+  tenantName: z.string().optional().default(""),
+  tenantContact: z.string().optional().default(""),
 });
 
 type FinishedPropertyFormValues = z.infer<typeof formSchema>;
@@ -78,39 +100,39 @@ export default function AddFinishedPropertyPage() {
   const form = useForm<FinishedPropertyFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      categoryId: '',
-      location: '',
-      size: '',
+      name: "",
+      categoryId: "",
+      location: "",
+      size: "",
       totalInvestment: 0,
       units: 1,
       unitsList: [
         {
-          unitName: 'Unit 1',
-          status: 'Vacant',
+          unitName: "Unit 1",
+          status: "Vacant",
           monthlyRent: 0,
           paymentDueDay: 1,
-          tenantName: '',
-          tenantContact: '',
+          tenantName: "",
+          tenantContact: "",
         },
       ],
-      status: 'Vacant',
+      status: "Vacant",
       monthlyRent: 0,
       paymentDueDay: 1,
-      tenantName: '',
-      tenantContact: '',
+      tenantName: "",
+      tenantContact: "",
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'unitsList',
+    name: "unitsList",
   });
 
-  const categoryId = form.watch('categoryId');
-  const unitsCountRaw = form.watch('units');
+  const categoryId = form.watch("categoryId");
+  const unitsCountRaw = form.watch("units");
   const isMultiUnit = MULTI_UNIT_CATEGORIES.includes(categoryId);
-  const isAirbnb = categoryId === 'airbnb';
+  const isAirbnb = categoryId === "airbnb";
 
   useEffect(() => {
     if (!isMultiUnit) return;
@@ -119,8 +141,15 @@ export default function AddFinishedPropertyPage() {
     if (unitsCount > currentCount) {
       for (let i = currentCount; i < unitsCount; i++) {
         append(
-          { unitName: `Unit ${i + 1}`, status: 'Vacant', monthlyRent: 0, paymentDueDay: 1, tenantName: '', tenantContact: '' },
-          { shouldFocus: false }
+          {
+            unitName: `Unit ${i + 1}`,
+            status: "Vacant",
+            monthlyRent: 0,
+            paymentDueDay: 1,
+            tenantName: "",
+            tenantContact: "",
+          },
+          { shouldFocus: false },
         );
       }
     } else if (unitsCount < currentCount) {
@@ -132,29 +161,35 @@ export default function AddFinishedPropertyPage() {
 
   const onSubmit = async (values: FinishedPropertyFormValues) => {
     if (!db || !user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be signed in to add a property.' });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be signed in to add a property.",
+      });
       return;
     }
 
     const finalUnitsList = isMultiUnit
-      ? values.unitsList.map(u => ({
+      ? values.unitsList.map((u) => ({
           ...u,
-          status: isAirbnb ? 'Vacant' : u.status,
+          status: isAirbnb ? "Vacant" : u.status,
           monthlyRent: isAirbnb ? 0 : u.monthlyRent,
           paymentDueDay: isAirbnb ? 1 : u.paymentDueDay,
-          tenantName: u.tenantName ?? '',
-          tenantContact: u.tenantContact ?? '',
+          tenantName: u.tenantName ?? "",
+          tenantContact: u.tenantContact ?? "",
           isAirbnb: isAirbnb,
         }))
-      : [{ 
-          unitName: 'Main Unit', 
-          status: isAirbnb ? 'Vacant' : (values.status || 'Vacant'), 
-          monthlyRent: isAirbnb ? 0 : (values.monthlyRent || 0), 
-          paymentDueDay: isAirbnb ? 1 : (values.paymentDueDay || 1), 
-          tenantName: values.tenantName ?? '', 
-          tenantContact: values.tenantContact ?? '',
-          isAirbnb: isAirbnb,
-        }];
+      : [
+          {
+            unitName: "Main Unit",
+            status: isAirbnb ? "Vacant" : values.status || "Vacant",
+            monthlyRent: isAirbnb ? 0 : values.monthlyRent || 0,
+            paymentDueDay: isAirbnb ? 1 : values.paymentDueDay || 1,
+            tenantName: values.tenantName ?? "",
+            tenantContact: values.tenantContact ?? "",
+            isAirbnb: isAirbnb,
+          },
+        ];
 
     const propertyData = {
       userId: user.uid,
@@ -164,20 +199,35 @@ export default function AddFinishedPropertyPage() {
       isAirbnb: isAirbnb,
       location: values.location,
       size: values.size,
-      description: '',
-      type: 'Finished',
-      imageId: 'default-img',
+      description: "",
+      type: "Finished",
+      imageId: "default-img",
       totalInvestment: values.totalInvestment,
       units: isMultiUnit ? values.units : 1,
-      unitsList: finalUnitsList.map((u, i) => ({ ...u, id: `unit-${i + 1}-${Date.now()}` })),
+      unitsList: finalUnitsList.map((u, i) => ({
+        ...u,
+        id: `unit-${i + 1}-${Date.now()}`,
+      })),
       createdAt: new Date().toISOString(),
       isDeleted: false,
-      members: { [user.uid]: 'admin' },
-      status: isAirbnb ? 'Vacant' : (!isMultiUnit ? (values.status || 'Vacant') : 'Occupied'),
-      monthlyRent: isAirbnb ? 0 : (!isMultiUnit ? (values.monthlyRent || 0) : 0),
-      paymentDueDay: isAirbnb ? 1 : (!isMultiUnit ? (values.paymentDueDay || 1) : 1),
-      tenantName: isAirbnb ? '' : (!isMultiUnit ? (values.tenantName ?? '') : ''),
-      tenantContact: isAirbnb ? '' : (!isMultiUnit ? (values.tenantContact ?? '') : ''),
+      members: { [user.uid]: "admin" },
+      status: isAirbnb
+        ? "Vacant"
+        : !isMultiUnit
+          ? values.status || "Vacant"
+          : "Occupied",
+      monthlyRent: isAirbnb ? 0 : !isMultiUnit ? values.monthlyRent || 0 : 0,
+      paymentDueDay: isAirbnb
+        ? 1
+        : !isMultiUnit
+          ? values.paymentDueDay || 1
+          : 1,
+      tenantName: isAirbnb ? "" : !isMultiUnit ? (values.tenantName ?? "") : "",
+      tenantContact: isAirbnb
+        ? ""
+        : !isMultiUnit
+          ? (values.tenantContact ?? "")
+          : "",
       totalConstructionCost: 0,
       totalRentReceived: 0,
       totalMaintenanceCost: 0,
@@ -186,19 +236,30 @@ export default function AddFinishedPropertyPage() {
       netProfit: 0 - values.totalInvestment, // Accounts for initial investment
     };
 
-    const targetCollection = collection(db, 'users', user.uid, 'finished_properties');
+    const targetCollection = collection(
+      db,
+      "users",
+      user.uid,
+      "finished_properties",
+    );
 
     addDoc(targetCollection, propertyData)
       .then(() => {
-        toast({ title: 'Property Added', description: 'The property has been successfully added.' });
-        router.push('/dashboard/finished-properties');
+        toast({
+          title: "Property Added",
+          description: "The property has been successfully added.",
+        });
+        router.push("/dashboard/finished-properties");
       })
       .catch(async (error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: targetCollection.path,
-          operation: 'create',
-          requestResourceData: propertyData,
-        }));
+        errorEmitter.emit(
+          "permission-error",
+          new FirestorePermissionError({
+            path: targetCollection.path,
+            operation: "create",
+            requestResourceData: propertyData,
+          }),
+        );
       });
   };
 
@@ -211,8 +272,12 @@ export default function AddFinishedPropertyPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-headline font-bold">Add Finished Property</h1>
-          <p className="text-muted-foreground">Define your completed asset and its initial lease terms.</p>
+          <h1 className="text-3xl font-headline font-bold">
+            Add Finished Property
+          </h1>
+          <p className="text-muted-foreground">
+            Define your completed asset and its initial lease terms.
+          </p>
         </div>
       </div>
 
@@ -224,7 +289,9 @@ export default function AddFinishedPropertyPage() {
                 <Building2 className="h-5 w-5 text-primary" />
                 General Information
               </CardTitle>
-              <CardDescription>Core property identifiers and valuation.</CardDescription>
+              <CardDescription>
+                Core property identifiers and valuation.
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
@@ -246,7 +313,10 @@ export default function AddFinishedPropertyPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a category" />
@@ -325,16 +395,28 @@ export default function AddFinishedPropertyPage() {
             <div className="space-y-6">
               <div className="flex items-center gap-2 px-1">
                 <LayoutGrid className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-headline font-bold">Unit Configuration</h2>
+                <h2 className="text-xl font-headline font-bold">
+                  Unit Configuration
+                </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {fields.map((field, index) => (
-                  <Card key={field.id} className="border-border/50 shadow-sm relative overflow-hidden">
+                  <Card
+                    key={field.id}
+                    className="border-border/50 shadow-sm relative overflow-hidden"
+                  >
                     <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                     <CardHeader className="flex flex-row items-center justify-between py-4 bg-muted/30">
-                      <CardTitle className="text-sm font-bold uppercase tracking-wider">Unit {index + 1}</CardTitle>
+                      <CardTitle className="text-sm font-bold uppercase tracking-wider">
+                        Unit {index + 1}
+                      </CardTitle>
                       {fields.length > 1 && (
-                        <Button variant="ghost" size="sm" className="h-8 text-destructive" onClick={() => remove(index)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-destructive"
+                          onClick={() => remove(index)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
@@ -346,7 +428,14 @@ export default function AddFinishedPropertyPage() {
                         render={({ field }) => (
                           <FormItem className={isAirbnb ? "md:col-span-2" : ""}>
                             <FormLabel>Name/Number</FormLabel>
-                            <FormControl><Input placeholder={isAirbnb ? "e.g. Room 1 or Entire House" : ""} {...field} /></FormControl>
+                            <FormControl>
+                              <Input
+                                placeholder={
+                                  isAirbnb ? "e.g. Room 1 or Entire House" : ""
+                                }
+                                {...field}
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -359,13 +448,22 @@ export default function AddFinishedPropertyPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Status</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
                                   <FormControl>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="Occupied">Occupied</SelectItem>
-                                    <SelectItem value="Vacant">Vacant</SelectItem>
+                                    <SelectItem value="Occupied">
+                                      Occupied
+                                    </SelectItem>
+                                    <SelectItem value="Vacant">
+                                      Vacant
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </FormItem>
@@ -377,13 +475,16 @@ export default function AddFinishedPropertyPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Monthly Rent</FormLabel>
-                                <FormControl><Input type="number" {...field} /></FormControl>
+                                <FormControl>
+                                  <Input type="number" {...field} />
+                                </FormControl>
                               </FormItem>
                             )}
                           />
                         </div>
                       )}
-                      {form.watch(`unitsList.${index}.status`) === 'Occupied' && (
+                      {form.watch(`unitsList.${index}.status`) ===
+                        "Occupied" && (
                         <div className="space-y-4 pt-4 border-t border-dashed">
                           <FormField
                             control={form.control}
@@ -391,7 +492,9 @@ export default function AddFinishedPropertyPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Tenant Name</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
                               </FormItem>
                             )}
                           />
@@ -401,7 +504,9 @@ export default function AddFinishedPropertyPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Contact Info</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
                               </FormItem>
                             )}
                           />
@@ -420,95 +525,120 @@ export default function AddFinishedPropertyPage() {
                   {isAirbnb ? "Airbnb Property Configuration" : "Lease Details"}
                 </CardTitle>
                 <CardDescription>
-                  {isAirbnb ? "This is configured as a single stand-alone Airbnb." : "Tenant and rental income configuration for this single-dwelling asset."}
+                  {isAirbnb
+                    ? "This is configured as a single stand-alone Airbnb."
+                    : "Tenant and rental income configuration for this single-dwelling asset."}
                 </CardDescription>
               </CardHeader>
               {!isAirbnb && (
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Occupancy Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Occupancy Status</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Occupied">Occupied</SelectItem>
+                            <SelectItem value="Vacant">Vacant</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="monthlyRent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Monthly Rent (ZMW)</FormLabel>
                         <FormControl>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <Input type="number" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Occupied">Occupied</SelectItem>
-                          <SelectItem value="Vacant">Vacant</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="paymentDueDay"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Payment Due Day</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={1} max={31} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {form.watch("status") === "Occupied" && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="tenantName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tenant Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. John Doe" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="tenantContact"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Tenant Contact Details</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="e.g. email or phone number"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </>
                   )}
-                />
-                <FormField
-                  control={form.control}
-                  name="monthlyRent"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Monthly Rent (ZMW)</FormLabel>
-                      <FormControl><Input type="number" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="paymentDueDay"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Payment Due Day</FormLabel>
-                      <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {form.watch('status') === 'Occupied' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="tenantName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tenant Name</FormLabel>
-                          <FormControl><Input placeholder="e.g. John Doe" {...field} /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="tenantContact"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel>Tenant Contact Details</FormLabel>
-                          <FormControl><Input placeholder="e.g. email or phone number" {...field} /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
-              </CardContent>
+                </CardContent>
               )}
             </Card>
           )}
 
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t z-50 md:left-[220px] lg:left-[280px]">
-             <div className="max-w-5xl mx-auto flex justify-end gap-4">
-                <Button variant="outline" type="button" asChild>
-                  <Link href="/dashboard/finished-properties">Cancel</Link>
-                </Button>
-                <Button type="submit" size="lg" className="px-8 font-bold" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'Saving Property...' : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Property
-                    </>
-                  )}
-                </Button>
-             </div>
+            <div className="max-w-5xl mx-auto flex justify-end gap-4">
+              <Button variant="outline" type="button" asChild>
+                <Link href="/dashboard/finished-properties">Cancel</Link>
+              </Button>
+              <Button
+                type="submit"
+                size="lg"
+                className="px-8 font-bold"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? (
+                  "Saving Property..."
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Property
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>

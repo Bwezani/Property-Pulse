@@ -1,10 +1,9 @@
+"use client";
 
-'use client';
-
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -22,28 +21,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Edit2, User, CalendarDays } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import type { Property, PropertyUnit } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+} from "@/components/ui/select";
+import { Edit2, User, CalendarDays } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useFirestore, useUser } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import type { Property, PropertyUnit } from "@/lib/types";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const formSchema = z.object({
-  unitName: z.string().min(1, 'Unit name is required.'),
-  status: z.enum(['Occupied', 'Vacant']),
-  monthlyRent: z.coerce.number().min(0, 'Rent cannot be negative.'),
+  unitName: z.string().min(1, "Unit name is required."),
+  status: z.enum(["Occupied", "Vacant"]),
+  monthlyRent: z.coerce.number().min(0, "Rent cannot be negative."),
   paymentDueDay: z.coerce.number().min(1).max(31),
   tenantName: z.string().optional(),
   tenantContact: z.string().optional(),
@@ -68,51 +67,67 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
       status: unit.status,
       monthlyRent: unit.monthlyRent,
       paymentDueDay: unit.paymentDueDay || 1,
-      tenantName: unit.tenantName || '',
-      tenantContact: unit.tenantContact || '',
+      tenantName: unit.tenantName || "",
+      tenantContact: unit.tenantContact || "",
     },
   });
 
   const onSubmit = async (values: EditUnitFormValues) => {
     if (!db || !user) return;
 
-    const updatedUnitsList = property.unitsList?.map((u) => {
-      if (u.id === unit.id) {
-        return {
-          ...u,
-          ...values,
-          tenantName: values.status === 'Occupied' ? values.tenantName || '' : '',
-          tenantContact: values.status === 'Occupied' ? values.tenantContact || '' : '',
-        };
-      }
-      return u;
-    }) || [];
+    const updatedUnitsList =
+      property.unitsList?.map((u) => {
+        if (u.id === unit.id) {
+          return {
+            ...u,
+            ...values,
+            tenantName:
+              values.status === "Occupied" ? values.tenantName || "" : "",
+            tenantContact:
+              values.status === "Occupied" ? values.tenantContact || "" : "",
+          };
+        }
+        return u;
+      }) || [];
 
-    const docRef = doc(db, 'users', user.uid, 'finished_properties', property.id);
+    const docRef = doc(
+      db,
+      "users",
+      user.uid,
+      "finished_properties",
+      property.id,
+    );
 
     updateDoc(docRef, {
       unitsList: updatedUnitsList,
     })
-    .then(() => {
-      toast({
-        title: 'Unit Updated',
-        description: `Details for ${values.unitName} have been saved.`,
+      .then(() => {
+        toast({
+          title: "Unit Updated",
+          description: `Details for ${values.unitName} have been saved.`,
+        });
+        setOpen(false);
+      })
+      .catch(async () => {
+        errorEmitter.emit(
+          "permission-error",
+          new FirestorePermissionError({
+            path: docRef.path,
+            operation: "update",
+            requestResourceData: { unitsList: updatedUnitsList },
+          }),
+        );
       });
-      setOpen(false);
-    })
-    .catch(async () => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'update',
-        requestResourceData: { unitsList: updatedUnitsList }
-      }));
-    });
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-primary"
+        >
           <Edit2 className="h-4 w-4" />
           <span className="sr-only">Edit Unit</span>
         </Button>
@@ -121,7 +136,8 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
         <DialogHeader>
           <DialogTitle>Edit Unit Configuration</DialogTitle>
           <DialogDescription>
-            Update lease terms, tenant information, and rent collection schedule for <strong>{unit.unitName}</strong>.
+            Update lease terms, tenant information, and rent collection schedule
+            for <strong>{unit.unitName}</strong>.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -147,7 +163,10 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Occupancy Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select status" />
@@ -181,7 +200,9 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center gap-2 text-primary">
                 <CalendarDays className="h-4 w-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">Collection Schedule</span>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  Collection Schedule
+                </span>
               </div>
               <FormField
                 control={form.control}
@@ -190,7 +211,13 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
                   <FormItem>
                     <FormLabel>Rent Collection Day (1-31)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} max={31} placeholder="e.g. 5" {...field} />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={31}
+                        placeholder="e.g. 5"
+                        {...field}
+                      />
                     </FormControl>
                     <FormDescription>
                       The day of the month when rent is automatically recorded.
@@ -201,11 +228,13 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
               />
             </div>
 
-            {form.watch('status') === 'Occupied' && (
+            {form.watch("status") === "Occupied" && (
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center gap-2 text-primary">
                   <User className="h-4 w-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Tenant Information</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    Tenant Information
+                  </span>
                 </div>
                 <FormField
                   control={form.control}
@@ -237,8 +266,14 @@ export function EditUnitForm({ property, unit }: EditUnitFormProps) {
             )}
 
             <DialogFooter>
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Saving changes...' : 'Save Unit Details'}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting
+                  ? "Saving changes..."
+                  : "Save Unit Details"}
               </Button>
             </DialogFooter>
           </form>

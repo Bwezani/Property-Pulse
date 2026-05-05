@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -20,22 +20,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Pencil } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-import type { Property } from '@/lib/types';
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Pencil } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useFirestore, useUser } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
+import type { Property } from "@/lib/types";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Property name is required.'),
-  location: z.string().min(1, 'Location is required.'),
-  size: z.string().min(1, 'Size is required.'),
+  name: z.string().min(1, "Property name is required."),
+  location: z.string().min(1, "Location is required."),
+  size: z.string().min(1, "Size is required."),
   isAirbnb: z.boolean().default(false),
 });
 
@@ -49,9 +49,9 @@ export function EditPropertyForm({ property }: { property: Property }) {
   const form = useForm<EditPropertyFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: property.name || '',
-      location: property.location || '',
-      size: property.size || '',
+      name: property.name || "",
+      location: property.location || "",
+      size: property.size || "",
       isAirbnb: property.isAirbnb || false,
     },
   });
@@ -59,8 +59,11 @@ export function EditPropertyForm({ property }: { property: Property }) {
   const onSubmit = async (values: EditPropertyFormValues) => {
     if (!db || !user) return;
 
-    const collectionName = property.type === 'Finished' ? 'finished_properties' : 'construction_properties';
-    const docRef = doc(db, 'users', user.uid, collectionName, property.id);
+    const collectionName =
+      property.type === "Finished"
+        ? "finished_properties"
+        : "construction_properties";
+    const docRef = doc(db, "users", user.uid, collectionName, property.id);
 
     updateDoc(docRef, {
       name: values.name,
@@ -69,15 +72,21 @@ export function EditPropertyForm({ property }: { property: Property }) {
       isAirbnb: values.isAirbnb,
     })
       .then(() => {
-        toast({ title: 'Property Updated', description: 'Changes saved successfully.' });
+        toast({
+          title: "Property Updated",
+          description: "Changes saved successfully.",
+        });
         setOpen(false);
       })
       .catch((error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'update',
-          requestResourceData: values,
-        }));
+        errorEmitter.emit(
+          "permission-error",
+          new FirestorePermissionError({
+            path: docRef.path,
+            operation: "update",
+            requestResourceData: values,
+          }),
+        );
       });
   };
 
@@ -149,9 +158,7 @@ export function EditPropertyForm({ property }: { property: Property }) {
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Is this an Airbnb/Short-term rental?
-                    </FormLabel>
+                    <FormLabel>Is this an Airbnb/Short-term rental?</FormLabel>
                     <p className="text-[0.8rem] text-muted-foreground">
                       Check this if income fluctuates monthly.
                     </p>
@@ -161,7 +168,7 @@ export function EditPropertyForm({ property }: { property: Property }) {
             />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
             </DialogFooter>
           </form>

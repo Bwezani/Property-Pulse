@@ -1,4 +1,3 @@
-
 import type {
   Property,
   PropertyCategory,
@@ -7,60 +6,61 @@ import type {
   MaintenanceExpense,
   ConstructionBudgetItem,
   MaintenanceBudgetItem,
-} from './types';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase'; // adjust if needed
- {
-    const docRef = doc(db, 'construction_budget_items', id);
+} from "./types";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/firebase"; // adjust if needed
+{
+  const docRef = doc(db, "construction_budget_items", id);
 
-    await updateDoc(docRef, {
-        ...data,
-        updatedAt: new Date(),
-    });
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: new Date(),
+  });
 }
 
 let categories: PropertyCategory[] = [
-  { id: 'stand-alone', name: 'Stand Alone' },
-  { id: 'apartment', name: 'Apartment' },
-  { id: 'flat', name: 'Flat' },
-  { id: 'bedsit', name: 'Bedsit' },
-  { id: 'commercial', name: 'Commercial Space' },
-  { id: 'warehouse', name: 'Warehouse' },
-  { id: 'other', name: 'Other' },
+  { id: "stand-alone", name: "Stand Alone" },
+  { id: "apartment", name: "Apartment" },
+  { id: "flat", name: "Flat" },
+  { id: "bedsit", name: "Bedsit" },
+  { id: "commercial", name: "Commercial Space" },
+  { id: "warehouse", name: "Warehouse" },
+  { id: "other", name: "Other" },
 ];
 
 let properties: Property[] = [
   {
-    id: 'prop-1',
-    name: 'Greenwood Villa',
-    code: 'GWV-001',
-    categoryId: 'stand-alone',
-    location: 'Maple Creek, Suburbia',
-    size: '2400 sqft',
-    description: 'A spacious family home with a modern design and a large backyard.',
-    type: 'Finished',
-    imageId: 'prop-1-img',
-    createdAt: '2022-08-15T10:00:00Z',
+    id: "prop-1",
+    name: "Greenwood Villa",
+    code: "GWV-001",
+    categoryId: "stand-alone",
+    location: "Maple Creek, Suburbia",
+    size: "2400 sqft",
+    description:
+      "A spacious family home with a modern design and a large backyard.",
+    type: "Finished",
+    imageId: "prop-1-img",
+    createdAt: "2022-08-15T10:00:00Z",
     isDeleted: false,
     members: {},
     totalInvestment: 250000,
-    status: 'Occupied',
+    status: "Occupied",
     monthlyRent: 2200,
     paymentDueDay: 1,
-    tenantName: 'John Doe',
-    tenantContact: 'john.doe@email.com',
-    constructionStage: 'Completed',
+    tenantName: "John Doe",
+    tenantContact: "john.doe@email.com",
+    constructionStage: "Completed",
     units: 1,
     unitsList: [
       {
-        id: 'unit-1-mock',
-        unitName: 'Main Villa',
-        status: 'Occupied',
-        tenantName: 'John Doe',
-        tenantContact: 'john.doe@email.com',
+        id: "unit-1-mock",
+        unitName: "Main Villa",
+        status: "Occupied",
+        tenantName: "John Doe",
+        tenantContact: "john.doe@email.com",
         monthlyRent: 2200,
         paymentDueDay: 1,
-      }
+      },
     ],
     totalConstructionCost: 0,
     totalRentReceived: 0,
@@ -70,25 +70,25 @@ let properties: Property[] = [
     netProfit: 0,
   },
   {
-    id: 'prop-2',
-    name: 'Oakside Apartments',
-    code: 'OKA-002',
-    categoryId: 'apartment',
-    location: 'Downtown, Metro City',
-    size: '12-unit building',
-    description: 'Modern apartment building in the heart of the city.',
-    type: 'Under Construction',
-    imageId: 'prop-2-img',
-    createdAt: '2023-05-20T14:30:00Z',
+    id: "prop-2",
+    name: "Oakside Apartments",
+    code: "OKA-002",
+    categoryId: "apartment",
+    location: "Downtown, Metro City",
+    size: "12-unit building",
+    description: "Modern apartment building in the heart of the city.",
+    type: "Under Construction",
+    imageId: "prop-2-img",
+    createdAt: "2023-05-20T14:30:00Z",
     isDeleted: false,
     members: {},
     totalInvestment: 0,
-    status: 'Vacant',
+    status: "Vacant",
     monthlyRent: 0,
     paymentDueDay: 0,
-    tenantName: '',
-    tenantContact: '',
-    constructionStage: 'Framing',
+    tenantName: "",
+    tenantContact: "",
+    constructionStage: "Framing",
     estimatedBudget: 1200000,
     totalConstructionCost: 0,
     totalRentReceived: 0,
@@ -98,36 +98,36 @@ let properties: Property[] = [
     netProfit: 0,
   },
   {
-    id: 'prop-3',
-    name: 'The Commerce Hub',
-    code: 'TCH-001',
-    categoryId: 'commercial',
-    location: 'Business District, Metro City',
-    size: '5000 sqft Office Space',
-    description: 'Prime commercial property with high foot traffic.',
-    type: 'Finished',
-    imageId: 'prop-3-img',
-    createdAt: '2021-11-01T09:00:00Z',
+    id: "prop-3",
+    name: "The Commerce Hub",
+    code: "TCH-001",
+    categoryId: "commercial",
+    location: "Business District, Metro City",
+    size: "5000 sqft Office Space",
+    description: "Prime commercial property with high foot traffic.",
+    type: "Finished",
+    imageId: "prop-3-img",
+    createdAt: "2021-11-01T09:00:00Z",
     isDeleted: false,
     members: {},
     totalInvestment: 750000,
-    status: 'Occupied',
+    status: "Occupied",
     monthlyRent: 8000,
     paymentDueDay: 5,
-    tenantName: 'Innovate Corp',
-    tenantContact: 'contact@innovatecorp.com',
-    constructionStage: 'Completed',
+    tenantName: "Innovate Corp",
+    tenantContact: "contact@innovatecorp.com",
+    constructionStage: "Completed",
     units: 1,
     unitsList: [
       {
-        id: 'unit-3-mock',
-        unitName: 'Suite 101',
-        status: 'Occupied',
-        tenantName: 'Innovate Corp',
-        tenantContact: 'contact@innovatecorp.com',
+        id: "unit-3-mock",
+        unitName: "Suite 101",
+        status: "Occupied",
+        tenantName: "Innovate Corp",
+        tenantContact: "contact@innovatecorp.com",
         monthlyRent: 8000,
         paymentDueDay: 5,
-      }
+      },
     ],
     totalConstructionCost: 0,
     totalRentReceived: 0,
@@ -142,56 +142,74 @@ let properties: Property[] = [
 
 // --- Data Access Functions ---
 
-export const getProperties = async () => properties.filter(p => !p.isDeleted);
-export const getPropertyById = async (id: string) => properties.find(p => p.id === id && !p.isDeleted);
+export const getProperties = async () => properties.filter((p) => !p.isDeleted);
+export const getPropertyById = async (id: string) =>
+  properties.find((p) => p.id === id && !p.isDeleted);
 export const getCategories = async () => categories;
-export const getConstructionExpenses = async (propertyId: string) => constructionExpenses.filter(e => e.propertyId === propertyId);
-export const getRentalIncomes = async (propertyId: string) => rentalIncomes.filter(i => i.propertyId === propertyId);
-export const getMaintenanceExpenses = async (propertyId: string) => maintenanceExpenses.filter(e => e.propertyId === propertyId);
+export const getConstructionExpenses = async (propertyId: string) =>
+  constructionExpenses.filter((e) => e.propertyId === propertyId);
+export const getRentalIncomes = async (propertyId: string) =>
+  rentalIncomes.filter((i) => i.propertyId === propertyId);
+export const getMaintenanceExpenses = async (propertyId: string) =>
+  maintenanceExpenses.filter((e) => e.propertyId === propertyId);
 
 export const getAllConstructionExpenses = async () => constructionExpenses;
 export const getAllRentalIncomes = async () => rentalIncomes;
 export const getAllMaintenanceExpenses = async () => maintenanceExpenses;
 
-
-
-export const addProperty = async (property: Omit<Property, 'id' | 'isDeleted' | 'createdAt'>) => {
-    const newProperty: Property = {
-        ...property,
-        id: `prop-${Date.now()}`,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-    };
-    properties.push(newProperty);
-    return newProperty;
+export const addProperty = async (
+  property: Omit<Property, "id" | "isDeleted" | "createdAt">,
+) => {
+  const newProperty: Property = {
+    ...property,
+    id: `prop-${Date.now()}`,
+    isDeleted: false,
+    createdAt: new Date().toISOString(),
+  };
+  properties.push(newProperty);
+  return newProperty;
 };
 
-export const updateProperty = async (id: string, updates: Partial<Property>) => {
-    properties = properties.map(p => p.id === id ? { ...p, ...updates } : p);
-    return properties.find(p => p.id === id);
-}
+export const updateProperty = async (
+  id: string,
+  updates: Partial<Property>,
+) => {
+  properties = properties.map((p) => (p.id === id ? { ...p, ...updates } : p));
+  return properties.find((p) => p.id === id);
+};
 
 export const deleteProperty = async (id: string) => {
-    properties = properties.map(p => p.id === id ? { ...p, isDeleted: true } : p);
-    return true;
-}
+  properties = properties.map((p) =>
+    p.id === id ? { ...p, isDeleted: true } : p,
+  );
+  return true;
+};
 
-export const addConstructionExpense = async (expense: Omit<ConstructionExpense, 'id'>) => {
-    const newExpense = { ...expense, id: `cex-${Date.now()}` };
-    constructionExpenses.push(newExpense);
-    return newExpense;
-}
+export const addConstructionExpense = async (
+  expense: Omit<ConstructionExpense, "id">,
+) => {
+  const newExpense = { ...expense, id: `cex-${Date.now()}` };
+  constructionExpenses.push(newExpense);
+  return newExpense;
+};
 
-export const addMaintenanceExpense = async (expense: Omit<MaintenanceExpense, 'id'>) => {
-    const newExpense = { ...expense, id: `mex-${Date.now()}` };
-    maintenanceExpenses.push(newExpense);
-    return newExpense;
-}
+export const addMaintenanceExpense = async (
+  expense: Omit<MaintenanceExpense, "id">,
+) => {
+  const newExpense = { ...expense, id: `mex-${Date.now()}` };
+  maintenanceExpenses.push(newExpense);
+  return newExpense;
+};
 
-export const updatePropertyCostOverrunAlert = async (propertyId: string, reason: string) => {
-    properties = properties.map(p => p.id === propertyId ? { ...p, costOverrunAlert: reason } : p);
-    return true;
-}
+export const updatePropertyCostOverrunAlert = async (
+  propertyId: string,
+  reason: string,
+) => {
+  properties = properties.map((p) =>
+    p.id === propertyId ? { ...p, costOverrunAlert: reason } : p,
+  );
+  return true;
+};
 
 /*export const updateConstructionBudgetItem = async (
   id: string,
@@ -205,10 +223,10 @@ export const updatePropertyCostOverrunAlert = async (propertyId: string, reason:
 
 export const updateMaintenanceBudgetItem = async (
   id: string,
-  updates: Partial<MaintenanceBudgetItem>
+  updates: Partial<MaintenanceBudgetItem>,
 ) => {
   maintenanceBudgetItems = maintenanceBudgetItems.map((item) =>
-    item.id === id ? { ...item, ...updates } : item
+    item.id === id ? { ...item, ...updates } : item,
   );
   return maintenanceBudgetItems.find((item) => item.id === id);
 };

@@ -1,10 +1,9 @@
+"use client";
 
-'use client';
-
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -21,35 +20,34 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { PlusCircle } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+} from "@/components/ui/select";
+import { PlusCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useFirestore, useUser } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Property name is required.'),
-  location: z.string().min(1, 'Location is required.'),
-  size: z.string().min(1, 'Size is required.'),
+  name: z.string().min(1, "Property name is required."),
+  location: z.string().min(1, "Location is required."),
+  size: z.string().min(1, "Size is required."),
   constructionStage: z.enum(
-    ['Planning', 'Foundation', 'Framing', 'Roofing', 'Finishing', 'Completed'],
-    { required_error: 'Construction stage is required.' }
+    ["Planning", "Foundation", "Framing", "Roofing", "Finishing", "Completed"],
+    { required_error: "Construction stage is required." },
   ),
-  estimatedBudget: z
-    .coerce
+  estimatedBudget: z.coerce
     .number()
-    .min(0, 'Budget cannot be negative.')
+    .min(0, "Budget cannot be negative.")
     .default(0),
 });
 
@@ -63,10 +61,10 @@ export function AddConstructionPropertyForm() {
   const form = useForm<ConstructionPropertyFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      location: '',
-      size: '',
-      constructionStage: 'Foundation',
+      name: "",
+      location: "",
+      size: "",
+      constructionStage: "Foundation",
       estimatedBudget: 0,
     },
   });
@@ -78,23 +76,23 @@ export function AddConstructionPropertyForm() {
       userId: user.uid,
       name: values.name,
       code: `CP-${Date.now().toString().slice(-6)}`,
-      categoryId: 'under-construction',
+      categoryId: "under-construction",
       location: values.location,
       size: values.size,
-      description: '',
-      type: 'Under Construction',
-      imageId: 'prop-2-img',
+      description: "",
+      type: "Under Construction",
+      imageId: "prop-2-img",
       totalInvestment: 0,
-      status: 'Vacant',
+      status: "Vacant",
       monthlyRent: 0,
       paymentDueDay: 0,
-      tenantName: '',
-      tenantContact: '',
+      tenantName: "",
+      tenantContact: "",
       constructionStage: values.constructionStage,
       estimatedBudget: values.estimatedBudget || 0,
       createdAt: new Date().toISOString(),
       isDeleted: false,
-      members: { [user.uid]: 'admin' },
+      members: { [user.uid]: "admin" },
       totalConstructionCost: 0,
       totalRentReceived: 0,
       totalMaintenanceCost: 0,
@@ -103,20 +101,31 @@ export function AddConstructionPropertyForm() {
       netProfit: 0,
     };
 
-    const targetCollection = collection(db, 'users', user.uid, 'construction_properties');
+    const targetCollection = collection(
+      db,
+      "users",
+      user.uid,
+      "construction_properties",
+    );
 
     addDoc(targetCollection, propertyData)
       .then(() => {
-        toast({ title: 'Property Added', description: 'The construction property has been successfully added.' });
+        toast({
+          title: "Property Added",
+          description: "The construction property has been successfully added.",
+        });
         form.reset();
         setOpen(false);
       })
       .catch(async (error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: targetCollection.path,
-          operation: 'create',
-          requestResourceData: propertyData,
-        }));
+        errorEmitter.emit(
+          "permission-error",
+          new FirestorePermissionError({
+            path: targetCollection.path,
+            operation: "create",
+            requestResourceData: propertyData,
+          }),
+        );
       });
   };
 
@@ -132,7 +141,8 @@ export function AddConstructionPropertyForm() {
         <DialogHeader>
           <DialogTitle>Add Construction Property</DialogTitle>
           <DialogDescription>
-            Enter the details for the new project. Ownership will be assigned to your account.
+            Enter the details for the new project. Ownership will be assigned to
+            your account.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -144,7 +154,10 @@ export function AddConstructionPropertyForm() {
                 <FormItem>
                   <FormLabel>Property Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Oakside Apartments Phase 2" {...field} />
+                    <Input
+                      placeholder="e.g. Oakside Apartments Phase 2"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -182,9 +195,14 @@ export function AddConstructionPropertyForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Construction Stage</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Planning">Planning</SelectItem>
@@ -204,14 +222,16 @@ export function AddConstructionPropertyForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Estimated Budget (ZMW)</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Adding...' : 'Add Property'}
+                {form.formState.isSubmitting ? "Adding..." : "Add Property"}
               </Button>
             </DialogFooter>
           </form>

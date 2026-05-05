@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
 import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from '@tanstack/react-table';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+} from "@tanstack/react-table";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 import {
   Table,
@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 
 interface TransactionsDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -44,17 +44,19 @@ export function TransactionsDataTable<TData, TValue>({
     <div className="space-y-4">
       {onDeleteSelected && Object.keys(rowSelection).length > 0 && (
         <div className="flex items-center">
-            <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={() => {
-                    onDeleteSelected(table.getFilteredSelectedRowModel().rows.map(r => r.original));
-                    setRowSelection({});
-                }}
-            >
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              onDeleteSelected(
+                table.getFilteredSelectedRowModel().rows.map((r) => r.original),
+              );
+              setRowSelection({});
+            }}
+          >
             <Trash2 className="mr-2 h-4 w-4" />
             Delete Selected ({Object.keys(rowSelection).length})
-            </Button>
+          </Button>
         </div>
       )}
       <div className="rounded-md border">
@@ -69,7 +71,7 @@ export function TransactionsDataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -82,13 +84,13 @@ export function TransactionsDataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
+                  data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

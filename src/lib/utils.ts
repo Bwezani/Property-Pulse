@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -10,9 +10,9 @@ export function cn(...inputs: ClassValue[]) {
  * It specifically avoids rounding up (e.g., 4.99M becomes 4.9M).
  */
 export function formatCurrency(value: number): string {
-    if (!value) return "ZMW0";
+  if (!value) return "ZMW0";
 
-    return `ZMW${value.toLocaleString("en-ZM")}`;
+  return `ZMW${value.toLocaleString("en-ZM")}`;
 }
 
 /**
@@ -20,10 +20,10 @@ export function formatCurrency(value: number): string {
  * Used for tooltips to show the exact, unrounded amount from the database.
  */
 export function formatFullCurrency(amount: number) {
-    return new Intl.NumberFormat("en-ZM", {
-        style: "currency",
-        currency: "ZMW",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount);
+  return new Intl.NumberFormat("en-ZM", {
+    style: "currency",
+    currency: "ZMW",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }

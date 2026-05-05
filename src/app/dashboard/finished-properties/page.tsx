@@ -1,15 +1,31 @@
-'use client';
+"use client";
 
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import { KpiCard } from '@/components/dashboard/kpi-card';
-import { PropertyListItem } from '@/components/properties/property-list-item';
-import { AddFinishedPropertyWrapper } from '@/components/properties/add-finished-property-wrapper';
-import { Home, PiggyBank, BadgePercent, TrendingUp, Loader2 } from 'lucide-react';
-import type { Property, ConstructionExpense, RentalIncome, MaintenanceExpense } from '@/lib/types';
-import { ImportFinishedProperties } from '@/components/properties/import-finished-properties';
-import { calculatePropertyFinancials } from '@/lib/financials';
-import { formatCurrency, formatFullCurrency } from '@/lib/utils';
+import {
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
+  useUser,
+} from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
+import { KpiCard } from "@/components/dashboard/kpi-card";
+import { PropertyListItem } from "@/components/properties/property-list-item";
+import { AddFinishedPropertyWrapper } from "@/components/properties/add-finished-property-wrapper";
+import {
+  Home,
+  PiggyBank,
+  BadgePercent,
+  TrendingUp,
+  Loader2,
+} from "lucide-react";
+import type {
+  Property,
+  ConstructionExpense,
+  RentalIncome,
+  MaintenanceExpense,
+} from "@/lib/types";
+import { ImportFinishedProperties } from "@/components/properties/import-finished-properties";
+import { calculatePropertyFinancials } from "@/lib/financials";
+import { formatCurrency, formatFullCurrency } from "@/lib/utils";
 
 export default function FinishedPropertiesDashboardPage() {
   const db = useFirestore();
@@ -17,28 +33,43 @@ export default function FinishedPropertiesDashboardPage() {
 
   const finishedPropertiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'users', user.uid, 'finished_properties'), where('userId', '==', user.uid));
+    return query(
+      collection(db, "users", user.uid, "finished_properties"),
+      where("userId", "==", user.uid),
+    );
   }, [db, user]);
-  const { data: rawProperties, isLoading: isDataLoading } = useCollection<Property>(finishedPropertiesQuery);
+  const { data: rawProperties, isLoading: isDataLoading } =
+    useCollection<Property>(finishedPropertiesQuery);
 
   // Fetch related data for calculation
   const expensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'users', user.uid, 'construction_expenses'), where('userId', '==', user.uid));
+    return query(
+      collection(db, "users", user.uid, "construction_expenses"),
+      where("userId", "==", user.uid),
+    );
   }, [db, user]);
-  const { data: allExpenses } = useCollection<ConstructionExpense>(expensesQuery);
+  const { data: allExpenses } =
+    useCollection<ConstructionExpense>(expensesQuery);
 
   const incomesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'users', user.uid, 'rental_incomes'), where('userId', '==', user.uid));
+    return query(
+      collection(db, "users", user.uid, "rental_incomes"),
+      where("userId", "==", user.uid),
+    );
   }, [db, user]);
   const { data: allIncomes } = useCollection<RentalIncome>(incomesQuery);
 
   const maintenanceQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'users', user.uid, 'maintenance_expenses'), where('userId', '==', user.uid));
+    return query(
+      collection(db, "users", user.uid, "maintenance_expenses"),
+      where("userId", "==", user.uid),
+    );
   }, [db, user]);
-  const { data: allMaintenance } = useCollection<MaintenanceExpense>(maintenanceQuery);
+  const { data: allMaintenance } =
+    useCollection<MaintenanceExpense>(maintenanceQuery);
 
   if (isAuthLoading || isDataLoading) {
     return (
@@ -48,29 +79,29 @@ export default function FinishedPropertiesDashboardPage() {
     );
   }
 
-  const finishedProperties = (rawProperties || []).map(p => 
+  const finishedProperties = (rawProperties || []).map((p) =>
     calculatePropertyFinancials(
       p,
-      (allExpenses || []).filter(e => e.propertyId === p.id),
-      (allIncomes || []).filter(i => i.propertyId === p.id),
-      (allMaintenance || []).filter(m => m.propertyId === p.id)
-    )
+      (allExpenses || []).filter((e) => e.propertyId === p.id),
+      (allIncomes || []).filter((i) => i.propertyId === p.id),
+      (allMaintenance || []).filter((m) => m.propertyId === p.id),
+    ),
   );
 
   const totalFinishedProperties = finishedProperties.length;
   const occupiedCount = finishedProperties.filter(
-    (p) => p.status === 'Occupied'
+    (p) => p.status === "Occupied",
   ).length;
   const totalProfit = finishedProperties.reduce(
     (acc, p) => acc + (p.totalProfit || 0),
-    0
+    0,
   );
   const totalRemainingInvestment = finishedProperties.reduce(
     (acc, p) => acc + (p.remainingInvestment || 0),
-    0
+    0,
   );
   const monthlyRentalIncome = finishedProperties
-    .filter((p) => p.status === 'Occupied')
+    .filter((p) => p.status === "Occupied")
     .reduce((acc, p) => acc + (p.monthlyRent || 0), 0);
 
   return (
@@ -80,7 +111,9 @@ export default function FinishedPropertiesDashboardPage() {
           <h1 className="text-3xl font-headline font-bold">
             Finished Properties
           </h1>
-          <p className="text-sm text-muted-foreground">Portfolio for {user?.email}</p>
+          <p className="text-sm text-muted-foreground">
+            Portfolio for {user?.email}
+          </p>
         </div>
 
         <div className="flex gap-2">
